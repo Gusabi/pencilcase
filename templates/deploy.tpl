@@ -2,6 +2,8 @@ require 'mina/bundler'
 require 'mina/rails'
 require 'mina/git'
 
+set :project, '{{ deploy }}'
+
 set :domain, '{{ remote_ip }}'
 set :deploy_to, '/home/{{ user }}/quantlab/{{ deploy }}'
 # Temporary dev path
@@ -20,6 +22,8 @@ set :user, '{{ user }}'    # Username in the server to SSH to.
 task :setup => :environment do
   #queue! %[mkdir -p "#{deploy_to}/shared/log"]
   #queue! %[chmod g+rx,u+rwx "#{deploy_to}/shared/log"]
+  invoke :'git:clone'
+  queue! %[./boostrap.sh link #{project}]
 end
 
 desc "Deploys the current version to the server."

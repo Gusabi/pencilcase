@@ -63,6 +63,30 @@ if [ $# -lt 2 ]; then
 fi
 
 
+function link_strategie_files() {
+    PROJECT=$1
+    while IFS=' ' read -ra ADDR; do
+        for file in "${ADDRE[@]}"; do
+            # Detect
+            if [[ $(cat $PROJECT/$file | grep "TradingAlgorithm") != "" ]]; then
+                target_path="$QTRADE/neuronquant/algorithmic/strategies"
+            elif [[ $(cat $PROJECT/$file | grep "PortfolioManager") != "" ]]; then
+                target_path="$QTRADE/neuronquant/algorithmic/managers"
+            elif [[ $(cat $PROJECT/$file | grep "DataSource") != "" ]]; then
+                if [[ "$file" == *"Live"* ]]; then
+                    target_path="$QTRADE/neuronquant/data/ziplinesources/live"
+                else
+                    target_path="$QTRADE/neuronquant/data/ziplinesources/backtest"
+                fi
+            fi
+
+            #Link
+            link_files $(pwd)/$PROJECT/$file $target_path/$file
+        done
+    done <<< "$(ls $PROJECT)"
+}
+
+
 function build_dir_tree() {
     # Create local directory
     log "Creating new project directory"
@@ -94,6 +118,7 @@ function init_workspace() {
 }
 
 
+#TODO Multiple project: mina -f config/project_deploy.rb ?
 function sync_workspace() {
     log "Pushing local work to remote repos"
     mina deploy -v
@@ -115,6 +140,9 @@ if [ $1 == "setup" ]; then
 
 elif [ $1 == "sync" ]; then
     sync_workspace
+
+elif [ $1 == "link" ]; then
+    link_strategie_files $PROJECT
 
 fi
 
