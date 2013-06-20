@@ -23,7 +23,8 @@ task :setup => :environment do
     #queue! %[mkdir -p "#{deploy_to}/shared/log"]
     #queue! %[chmod g+rx,u+rwx "#{deploy_to}/shared/log"]
     invoke :'git:clone'
-    queue! %[link_strategie_files]
+    #queue! %[link_strategie_files]
+    queue! %[./bootstrap.sh link]
 end
 
 desc "Deploys the current version to the server."
@@ -34,6 +35,7 @@ task :deploy => :environment do
         invoke :'git:clone'
 
         to :launch do
+            #TODO Run update_library.sh
             queue 'echo "Nothing for now"'
         end
     end

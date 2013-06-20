@@ -35,6 +35,7 @@ task :deploy => :environment do
 
     to :launch do
       queue 'echo "Nothing for now"'
+      queue './boostrap.sh run'
     end
   end
 end

@@ -21,6 +21,7 @@ function usage() {
 
 
 IP="192.168.0.17"
+HOSTNAME="192.168.0.17"
 AUTHOR=""
 STRATEGIE=""
 MANAGER=""
@@ -98,6 +99,10 @@ function build_dir_tree() {
 
 
 function render_template_files() {
+    log $PROJECT
+    log "$1"
+    log "$2"
+    log "$3"
     log "Generating project files from templates"
     ./generate_env.py $PROJECT --author $AUTHOR \
         --strategie $1 --manager $2 --source $3
@@ -144,7 +149,9 @@ elif [ $1 == "sync" ]; then
 elif [ $1 == "link" ]; then
     link_strategie_files $PROJECT
 
+elif [ $1 == "run" ]; then
+    $QTRADE/scripts/run_app.sh 1
+
 fi
 
 success "Done"
-
