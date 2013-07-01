@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+#
+# boostrap.sh
+# Copyright (C) 2013 xavier <xavier@laptop-300E5A>
+#
+# Distributed under terms of the MIT license.
+#
+# vi: set ft=bash :
+
+set -e
+clear
+
+while getopts ":hs:a:m:d:" OPTION; do
+    case $OPTION in
+        h)
+            echo "Usage: $0 --strategie=<name> [--manager=<name>] [--source=<name>] [--author=<name>]"
+            exit 1
+            ;;
+        s)
+            STRATEGIE=$OPTARG
+            ;;
+        a)
+            AUTHOR=$OPTARG
+            ;;
+        m)
+            MANAGER=$OPTARG
+            ;;
+        d)
+            SOURCE=$OPTARG
+            ;;
+        *)
+            echo "Usage: $0 --strategie=<name> [--manager=<name>] [--source=<name>] [--author=<name>]"
+            exit
+            ;;
+     esac
+done
+
+source utils.sh
+source dokuant_lib.sh
+
+
+log "    Dokuan    "
+log "______________"
+log ""
+
+
+PROJECT=$(get_project_name)
+
+
+render_template_files $STRATEGIE $MANAGER $SOURCE $AUTHOR
+log "Copying default configuration file"
+cp $HOME/local/templates/plugins.tpl plugins.json
+touch requirements.txt
+create_dokku_app $USER $PROJECT
+success "Done"

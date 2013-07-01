@@ -1,0 +1,74 @@
+#! /bin/bash
+#
+# boostrap.sh
+# Copyright (C) 2013 xavier <xavier@laptop-300E5A>
+#
+# Distributed under terms of the MIT license.
+#
+# vi: set ft=bash :
+
+set -e
+clear
+
+source utils.sh
+source dokuant_lib.sh
+
+
+log "    Dokuan    "
+log "______________"
+log ""
+
+
+function usage() {
+    #TODO
+    log "Usage: $0 command"
+}
+
+
+PROJECT=$(get_project_name)
+
+
+case "$1" in
+    create-user)
+        create_dokku_user $USER
+        success "Done"
+    
+    ;;
+  
+    create-app)
+        #FIXME If directory clean, stop after initiating git
+        create_dokku_app $USER $PROJECT
+        success "Done"
+  
+    ;;
+  
+    deploy)
+        deploy_dokku_app $PROJECT
+        success "Done"
+
+    ;;
+
+    logs)
+        log "Fetching logs"
+        remote_execution "docker logs $(get_container_id $PROJECT)"
+        success "Done"
+
+    ;;
+
+    restart)
+        log "Restarting application"
+        remote_execution "docker restart $(get_container_id $PROJECT)"
+        success "Done"
+
+    ;;
+
+    execute)
+        run_in_container $PROJECT    
+
+    ;;
+
+    *)
+        usage
+        die "..."
+    ;;
+esac
