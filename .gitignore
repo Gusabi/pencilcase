@@ -72,5 +72,6 @@ npm-debug.log
 
 # Quandl
 authtoken.p
-config/plugins.json
 management/
+
+plugins.json
