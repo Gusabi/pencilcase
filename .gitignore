@@ -1,0 +1,76 @@
+*.py[coxd]
+
+# General and C++
+.*
+!.gitignore
+*~
+res
+*.o
+*.pyc
+deprecated/
+dist
+QSData
+CSV
+node_modules/*
+data
+*.bkp
+
+# R
+# History files
+.Rhistory
+Rplots.pdf
+
+# Example code in package build process
+*-Ex.R
+
+# Logs
+quantrade.log
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# LaTex
+*.aux
+*.lof
+*.out
+*.log
+*.toc
+images/*
+
+# node
+npm-debug.log
+
+# Quandl
+authtoken.p
+config/plugins.json
+management/

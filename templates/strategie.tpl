@@ -1,5 +1,5 @@
 #
-# Copyright © {{ year }} {{author}}
+# Copyright {{ year }} {{author}}
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,23 +27,23 @@ class {{ strategie }}(TradingAlgorithm):
     def handle_data(self, data):
         self.loops += 1
         signals = {}
-        ''' ------------------------------------------------------    Init   --'''
+        ''' ---------------------------------------------    Init   --'''
         if self.initialized:
             instructions = self.manager.update(
-                    self.portfolio,
-                    self.datetime.to_pydatetime(),
-                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
-                    save=self.save,
-                    widgets=False)
+                self.portfolio,
+                self.datetime,
+                self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                save=self.save,
+                widgets=False)
         else:
             # Perf_tracker need at least a turn to have an index
             self.initialized = True
 
-        ''' --------------------------------------------------    Scan   --'''
+        ''' --------------------------------------------    Scan   --'''
         for ticker in data:
             self.logger.debug(data[ticker].price)
 
-        ''' ------------------------------------------------------   Orders  --'''
+        ''' --------------------------------------------   Orders  --'''
         if signals:
             orderBook = self.manager.trade_signals_handler(signals)
             for stock in orderBook:

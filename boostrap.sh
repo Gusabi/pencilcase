@@ -6,152 +6,84 @@
 # Distributed under terms of the MIT license.
 #
 
+
 set -e
 clear
 
+source lib/utils.sh
 
-source utils.sh
+log "    Dokuan    "
+log "______________"
+log ""
 
 
-function usage() {
-    #TODO
-    log "Usage: $0 command"
-    log "Usage: $0 command project -a author -s strategie"
+function install_files() {
+    SHELL_CONFIG_FILE=$1
+    if [ ! -d $HOME/local/bin ]; then
+        log "Creating ~/local/bin directory"
+        mkdir -p $HOME/local/bin
+        echo "export PATH=\$PATH:$HOME/local/bin" >> $SHELL_CONFIG_FILE
+    fi
+    log "Copying dokuant scripts to local bin"
+    cp ./bin/* $HOME/local/bin
+
+    if [ ! -d $HOME/local/lib ]; then
+        log "Creating ~/local/lib directory"
+        mkdir -p $HOME/local/lib
+        echo "export PATH=\$PATH:$HOME/local/lib" >> $SHELL_CONFIG_FILE
+    fi
+    log "Moving dokuant lib to local lib"
+    cp ./lib/* $HOME/local/lib
+
+    if [ ! -d $HOME/local/templates ]; then
+        log "Creating ~/local/templates directory"
+        mkdir -p $HOME/local/templates
+    fi
+    log "Copying dokuant templates to local templates"
+    cp ./templates/* $HOME/local/templates
 }
 
 
-IP="192.168.0.17"
-HOSTNAME="192.168.0.17"
-AUTHOR=""
-STRATEGIE=""
-MANAGER=""
-SOURCE=""
-while getopts :hsma: OPTION
-do
-     case $OPTION in
-         h)
-             usage
-             exit 1
-             ;;
-         s)
-             STRATEGIE=$OPTARG
-             ;;
-         a)
-             AUTHOR=$OPTARG
-             ;;
-         m)
-             MANAGER=$OPTARG
-             ;;
-         s)
-             SOURCE=$OPTARG
-             ;;
-         i)
-             IP=$OPTARG
-             ;;
-         ?)
-             usage
-             exit
-             ;;
-     esac
-done
+function install_dependencies() {
+    packages=""
+    if ! is_installed "git"; then
+        packages+=" git"
+    else
+        success "Git already installed"
+    fi
+    if ! is_installed "python-pip"; then
+        packages+=" python-pip"
+    else
+        success "Pip already installed"
+    fi
 
+    if [[ $packages != "" ]]; then
+        log "Installing packages $packages"
+        sudo apt-get install $packages
+    fi
 
-PROJECT=$2
-#TODO Much better check
-if [ $# -lt 2 ]; then
-    usage
-    die "Insufficient number of args, exiting..."
-fi
-
-
-function link_strategie_files() {
-    PROJECT=$1
-    while IFS=' ' read -ra ADDR; do
-        for file in "${ADDRE[@]}"; do
-            # Detect
-            if [[ $(cat $PROJECT/$file | grep "TradingAlgorithm") != "" ]]; then
-                target_path="$QTRADE/neuronquant/algorithmic/strategies"
-            elif [[ $(cat $PROJECT/$file | grep "PortfolioManager") != "" ]]; then
-                target_path="$QTRADE/neuronquant/algorithmic/managers"
-            elif [[ $(cat $PROJECT/$file | grep "DataSource") != "" ]]; then
-                if [[ "$file" == *"Live"* ]]; then
-                    target_path="$QTRADE/neuronquant/data/ziplinesources/live"
-                else
-                    target_path="$QTRADE/neuronquant/data/ziplinesources/backtest"
-                fi
-            fi
-
-            #Link
-            link_files $(pwd)/$PROJECT/$file $target_path/$file
-        done
-    done <<< "$(ls $PROJECT)"
+    pip install -r requirements.txt
 }
 
 
-function build_dir_tree() {
-    # Create local directory
-    log "Creating new project directory"
-    mkdir $PROJECT
-    log "Creating remote new project directory"
-    ssh $USER@$IP "mkdir /home/$USER/quantlab/$PROJECT"
-    success "Done"
-}
 
+if [[ $SHELL == "/bin/bash" ]]; then 
+    log "Bash detected"
+    SHELL_CONFIG_FILE="$HOME/.bashrc"
 
-function render_template_files() {
-    log $PROJECT
-    log "$1"
-    log "$2"
-    log "$3"
-    log "Generating project files from templates"
-    ./generate_env.py $PROJECT --author $AUTHOR \
-        --strategie $1 --manager $2 --source $3
-    success "Done"
-}
+elif [[ $SHELL == "/bin/zsh" ]]; then 
+    log "Zsh detected"
+    SHELL_CONFIG_FILE="$HOME/.zshrc"
 
-
-function init_workspace() {
-    log "Initiating worspace repository"
-    cd $PROJECT
-    git init
-    git add -A
-    git commit -m "Initial commit"
-
-    #FIXME 
-    #log "Setting up remote deployment"
-    #mina setup -v
-}
-
-
-#TODO Multiple project: mina -f config/project_deploy.rb ?
-function sync_workspace() {
-    log "Pushing local work to remote repos"
-    mina deploy -v
-}
-
-
-if ! is_installed "mina"; then
-    log "Installing mina deployment tool"
-    sudo gem install mina
 else
-    success "Mina gem already installed"
+    fail "Unable to detect shell, assuming bash"
+    SHELL_CONFIG_FILE="$HOME/.bashrc"
 fi
+echo "" >> $SHELL_CONFIG_FILE
+echo "# QuantLab configuration" >> $SHELL_CONFIG_FILE
 
-if [ $1 == "setup" ]; then
-    build_dir_tree
-    render_template_files $STRATEGIE $MANAGER $SOURCE
-    init_workspace
-    #sync_workspace
 
-elif [ $1 == "sync" ]; then
-    sync_workspace
-
-elif [ $1 == "link" ]; then
-    link_strategie_files $PROJECT
-
-elif [ $1 == "run" ]; then
-    $QTRADE/scripts/run_app.sh 1
-
-fi
-
-success "Done"
+install_files $SHELL_CONFIG_FILE
+install_dependencies
+log "Done"
+success "Dokuant ready to use, Yay !"

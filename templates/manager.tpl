@@ -18,14 +18,14 @@ from portfolio import PortfolioManager
 
 
 class {{ manager }}(PortfolioManager):
-    ''' Template class ''
+    ''' Template class '''
     def optimize(self, date, to_buy, to_sell, parameters):
         '''
         Specifies the portfolio's allocation strategy
         The user can use :
         self.portfolio    : zipline portfolio object
         self.max_assets   : maximum assets the portfolio can have at a time
-        self.max_weigths  : maximum weigth for an asset can have in the portfolio
+        self.max_weigths  : maximum weigth for an asset you can have in the portfolio
         _____________________________________________
         Parameters
             date: datetime.timestamp
