@@ -8,20 +8,19 @@
 # vi: set ft=bash :
 
 set -e
-clear
+#clear
 
 source utils.sh
 source dokuant_lib.sh
 
 
-log "    Dokuan    "
-log "______________"
+log "       Dokuan       "
+log "____________________"
 log ""
 
 
 function usage() {
-    #TODO
-    log "Usage: $0 command"
+    log "Usage: $0 command [OPTIONS]"
 }
 
 
@@ -43,7 +42,13 @@ case "$1" in
     ;;
   
     deploy)
-        deploy_dokku_app $PROJECT
+        #FIXME Can't give multiple words as comment
+        if [[ $# == 2 ]]; then
+            commit_comment=$2
+        else
+            commit_comment="Automatic commit"
+        fi
+        deploy_dokku_app $PROJECT $commit_comment
         success "Done"
 
     ;;
@@ -64,6 +69,13 @@ case "$1" in
 
     execute)
         run_in_container $PROJECT    
+
+    ;;
+
+    connect)
+        #FIXME For now only ssh
+        interpreter=$2
+        repl_container $PROJECT $interpreter
 
     ;;
 

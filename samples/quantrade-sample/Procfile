@@ -1,1 +1,1 @@
-web: ipengine --file=$HOME/ipcontroller-engine.json
+web: python app.py --initialcash 50000 --tickers random,20 --algorithm BuyAndHold --manager Fair --end 17h --loglevel CRITICAL --database liveparis --exchange paris --frequency minute --live --source EquitiesLiveSource

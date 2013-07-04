@@ -18,7 +18,7 @@ from portfolio import PortfolioManager
 import random
 
 
-class TestManager(PortfolioManager):
+class FoolManager(PortfolioManager):
     ''' Template class '''
     def optimize(self, date, to_buy, to_sell, parameters):
         '''

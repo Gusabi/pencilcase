@@ -8,7 +8,7 @@
 # vi: set ft=bash :
 
 set -e
-clear
+#clear
 
 while getopts ":hs:a:m:d:" OPTION; do
     case $OPTION in

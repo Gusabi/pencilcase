@@ -14,11 +14,12 @@
 # limitations under the License.
 
 
+
 from zipline.algorithm import TradingAlgorithm
 import random
 
 
-class TestAlgorithm(TradingAlgorithm):
+class RandomSignals(TradingAlgorithm):
     ''' Template class '''
     def initialize(self, properties):
         self.debug = properties.get('debug', False)

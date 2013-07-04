@@ -10,7 +10,9 @@
 set -e
 clear
 
+
 source lib/utils.sh
+
 
 log "    Dokuan    "
 log "______________"
@@ -60,11 +62,23 @@ function install_dependencies() {
     if [[ $packages != "" ]]; then
         log "Installing packages $packages"
         sudo apt-get install $packages
+        log "[Git configuration] Type your email adress, followed by enter: "
+        read user_email
+        git config --global user.email $user_email
+        log "[Git configuration] Type your user name, followed by enter: "
+        read user_name
+        git config --global user.name $user_name
     fi
 
     pip install -r requirements.txt
 }
 
+
+
+# At least install_dependencies needs root permission for now
+if [ $(whoami) != 'root' ]; then
+    die "** Error: This installation script needs root permissions"
+fi
 
 
 if [[ $SHELL == "/bin/bash" ]]; then 
@@ -85,5 +99,13 @@ echo "# QuantLab configuration" >> $SHELL_CONFIG_FILE
 
 install_files $SHELL_CONFIG_FILE
 install_dependencies
-log "Done"
+log "Done, repopen a terminal to make changes effective"
 success "Dokuant ready to use, Yay !"
+
+#NOTE Root execution might causes permission issue for copied files
+#FIXME install_dependencies needs sudo permission (should be fixed/ok)
+#FIXME Generate_quant_env is not executable after installation (should be fixed)
+#FIXME If git has never been used, git config will stop execution (should be fixed)
+#FIXME Install virtualenv (should be fixed)
+#FIXME Every ssh command requires to be xavier (VM would solve this)
+#FIXME User creation: automatic key generation if needed

@@ -7,6 +7,11 @@
 #
 
 
+#NOTE Those are standard unix env variables forced temporary
+HOSTNAME="192.168.0.17"
+USER="xavier"
+
+
 function get_project_name() {
     pwd | awk -F"/" '{print $NF}'
 }
@@ -55,7 +60,7 @@ function create_dokku_app() {
         log "Creating virtual environment"
         virtualenv venv --distribute --no-site-packages
         #FIXME Activates nothing
-        source venv/bin/activate
+        source ./venv/bin/activate
         echo "venv" >> .gitignore
         echo "*.pyc" >> .gitignore
         #NOTE Parse *.py files and pip install them ? then pip freeze, etc...
@@ -75,6 +80,8 @@ function create_dokku_app() {
 
 
 function deploy_dokku_app() {
+    project=$1
+    commit_comment=$2
     if is_python; then
         if [[ $VIRTUAL_ENV == "" ]]; then
             log "Activating virtualenv for dependencies detection"
@@ -85,20 +92,26 @@ function deploy_dokku_app() {
     fi
 
     if [[ $(git status | grep "nothing to commit") == "" ]]; then
-        log "Committing changes"
+        log "Committing changes ($commit_comment)"
         git add -A
-        git commit -m 'Automatic commit'
+        git commit -m "$commit_comment"
     else
         success "Nothing to commit, working directory clean"
     fi
 
-    log "Deploying to server"
-    git push $1 master
+    log "Deploying to server application $project"
+    git push $project master
 }
 
 
 function run_in_container() {
-    procfile=`<Procfile`
+    #TODO if no command provided ($2) read procfile
+    if [[ $# == 2 ]]; then
+        procfile="web: $2"
+    else
+        procfile=`<Procfile`
+    fi
+
     docker_command="docker run app/$1 /bin/bash -c \"echo '$procfile' > /app/Procfile && /start web\""
     echo $docker_command
     #remote_execution $docker_command
@@ -107,6 +120,7 @@ function run_in_container() {
 
 
 function remote_execution() {
+    #TODO manage and indicate fails
     ssh_command=$1
     log "Executing remotely: $ssh_command"
     log
@@ -124,4 +138,32 @@ function get_container_id() {
 function fetch_container_info() {
     #TODO Json processing of the anwser
     remote_execution "docker inspect $(get_container_id $1)"
+}
+
+
+function repl_container() {
+    container_name=$1
+    interpreter=$2
+
+    if [[ $interpreter == "ssh" ]]; then
+        ssh_container $container_name
+    else
+        #FIXME Does not work
+        docker_command="docker run -i -t app/$container_name $interpreter"
+        remote_execution $docker_command
+    fi
+}
+
+
+function ssh_container() {
+    forwarded_port=$(remote_execution "docker port $(get_container_id $1) 22") 
+    #FIXME Check for error
+    if [[  "$forwarded_port" =~ "*docker*" ]]; then
+        # This is the log message, we failed...
+        die "Unable to reach forwrded port..."
+    else
+        log "Got container ssh forwarded port: $forwarded_port"
+        log "Connecting..."
+        ssh  root@$HOSTNAME -p $forwarded_port
+    fi
 }
