@@ -1,0 +1,43 @@
+#! /bin/bash
+#
+# shaker
+# Copyright (C) 2013 xavier <xavier@laptop-300E5A>
+#
+# Distributed under terms of the MIT license.
+#
+# vi: set ft=bash :
+
+set -e
+
+source utils.sh
+source shaker_lib.sh
+
+
+log "       Shaker       "
+log "____________________"
+log ""
+
+
+function usage() {
+    log "Usage: $0 command [OPTIONS]"
+}
+
+
+case "$1" in
+
+    setup)
+        create_instance $2
+
+    ;;
+
+    connect)
+        connect
+
+    ;;
+
+    *)
+        usage
+        die "..."
+    ;;
+
+esac

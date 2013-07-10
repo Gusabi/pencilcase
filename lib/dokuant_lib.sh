@@ -87,8 +87,9 @@ function deploy_dokku_app() {
             log "Activating virtualenv for dependencies detection"
             source ./venv/bin/activate
         fi
-        log "Storing app dependencies"
-        pip freeze > requirements.txt
+        #FIXME Since unexpected github dependecies appear, disable for now automatic save
+        #log "Storing app dependencies"
+        #pip freeze > requirements.txt
     fi
 
     if [[ $(git status | grep "nothing to commit") == "" ]]; then
@@ -141,6 +142,7 @@ function fetch_container_info() {
 }
 
 
+#FIXME Does not work...
 function repl_container() {
     container_name=$1
     interpreter=$2

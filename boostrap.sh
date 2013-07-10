@@ -14,8 +14,8 @@ clear
 source lib/utils.sh
 
 
-log "    Dokuan    "
-log "______________"
+log "    Dokuan & Shaker    "
+log "_______________________"
 log ""
 
 
@@ -109,3 +109,4 @@ success "Dokuant ready to use, Yay !"
 #FIXME Install virtualenv (should be fixed)
 #FIXME Every ssh command requires to be xavier (VM would solve this)
 #FIXME User creation: automatic key generation if needed
+#TODO Remplacer logbook par logging pour réduire les dépendances

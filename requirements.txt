@@ -1,3 +1,4 @@
+httpie
 docopt
 jinja2
 logbook
