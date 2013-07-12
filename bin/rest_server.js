@@ -32,8 +32,7 @@ function fireup_env(configuration, filename, build_env_callback) {
         .on('end', function () {
             fs.writeFile('Vagrantfile', buffer.toString(), function (err) {
                 if (err) 
-                    return console.log(err);
-                console.log(buffer.toString());
+                    return log(err);
                 log ('Dev::renderer::operation is completed')
 
                 build_env_callback();
@@ -74,17 +73,16 @@ function dev_env(req, res, next) {
 
     fireup_env(box_configuration, 'vagrant_vb.tpl', function() {
         // run vagrant up
-        //var git_repos = 'https://github.com/Gusabi/' + req.params.project
-        log('Dev::Cloning repos ' + req.params.project + ' of ' + 'Gusabi')
-        var child = spawn('go_box.sh', ['Gusabi', req.params.project]);
+        log('Dev::Cloning repos ' + req.params.project + ' of ' + req.params.ghuser)
+        var child = spawn('manage_box.sh', [req.params.ghuser, req.params.project]);
 
         child.stdout.on('data', function (data) {
             //NOTE verbose condition ?
-            console.log('Dev::vm_starter:stdout::' + data);
+            log('Dev::vm_starter:stdout::' + data);
         });
 
         child.stderr.on('data', function (data) {
-            console.log('Dev::vm_starter::stderr::' + data);
+            log('Dev::vm_starter::stderr::' + data);
         });
 
         child.on('exit', function (code, signal) {
@@ -101,7 +99,7 @@ function dev_env(req, res, next) {
         log('Spawned process (' + child.pid + ')')
 
         finalize('/home/xavier/.vagrant.d/insecure_private_key', function (ssh_key) {
-            console.log(ssh_key);
+            log('Sending back connection informations')
             res.send(
                 {'ip': '192.168.0.12',
                  'port': 2222,

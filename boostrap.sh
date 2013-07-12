@@ -43,6 +43,11 @@ function install_files() {
     fi
     log "Copying dokuant templates to local templates"
     cp ./templates/* $HOME/local/templates
+
+    log "Setting environment variable"
+    echo "export SERVERDEV_IP=$2" >> $SHELL_CONFIG_FILE
+    echo "export SERVERDEPLOY_IP=$3" >> $SHELL_CONFIG_FILE
+    echo "export SERVERDEV_PORT=8080" >> $SHELL_CONFIG_FILE
 }
 
 
@@ -81,6 +86,30 @@ if [ $(whoami) != 'root' ]; then
 fi
 
 
+#TODO help
+while getopts ":d:e:" optname
+do
+  case "$optname" in
+    "d")
+        SERVERDEPLOY_IP=$OPTARG
+        ;;
+    "e")
+        SERVERENV_IP=$OPTARG
+        ;;
+    "?")
+        echo "Unknown option $OPTARG"
+        ;;
+    ":")
+        echo "No argument value for option $OPTARG"
+        ;;
+    *)
+        # Should not occur
+        echo "Unknown error while processing options"
+        ;;
+  esac
+done
+
+
 if [[ $SHELL == "/bin/bash" ]]; then 
     log "Bash detected"
     SHELL_CONFIG_FILE="$HOME/.bashrc"
@@ -93,11 +122,13 @@ else
     fail "Unable to detect shell, assuming bash"
     SHELL_CONFIG_FILE="$HOME/.bashrc"
 fi
-echo "" >> $SHELL_CONFIG_FILE
-echo "# QuantLab configuration" >> $SHELL_CONFIG_FILE
 
 
-install_files $SHELL_CONFIG_FILE
+# Default values
+SERVERENV_IP=${SERVERENV_IP:-192.168.0.17}
+SERVERDEPLOY_IP=${SERVERDEPLOY_IP:-192.168.0.17}
+
+install_files $SHELL_CONFIG_FILE $SERVERENV_IP $SERVERDEPLOY_IP
 install_dependencies
 log "Done, repopen a terminal to make changes effective"
 success "Dokuant ready to use, Yay !"

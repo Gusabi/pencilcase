@@ -39,8 +39,8 @@ source utils.sh
 source dokuant_lib.sh
 
 
-log "    Dokuan    "
-log "______________"
+log "       Dokuan       "
+log "____________________"
 log ""
 
 

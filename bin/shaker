@@ -7,7 +7,6 @@
 #
 # vi: set ft=bash :
 
-set -e
 
 source utils.sh
 source shaker_lib.sh
@@ -23,15 +22,79 @@ function usage() {
 }
 
 
-case "$1" in
+#TODO help
+while getopts ":i:m:p:u:w:" optname
+do
+  case "$optname" in
+    "i")
+        image=$OPTARG
+        ;;
+    "m")
+        memory=$OPTARG
+        ;;
+    "p")
+        project=$OPTARG
+        ;;
+    "u")
+        github_user=$OPTARG
+        ;;
+    "w")
+        where=$OPTARG
+        ;;
+    "?")
+        echo "Unknown option $OPTARG"
+        ;;
+    ":")
+        echo "No argument value for option $OPTARG"
+        ;;
+    *)
+        # Should not occur
+        echo "Unknown error while processing options"
+        ;;
+  esac
+done
+
+
+arguments=()
+for p in "${@:$OPTIND}"
+    do
+    #echo "$p"
+    arguments+=($p)
+done
+
+
+if [ ! $project ]; then
+    die "You have to sepcifie which project you are working on"
+fi
+
+
+case "${arguments[0]}" in
 
     setup)
-        create_instance $2
+        # Set default values
+        github_user=${github_user:-Gusabi}
+        image=${image:-precise64}
+        memory=${memory:-1024}
+        create_instance $project $github_user $image $memory
 
     ;;
 
     connect)
-        connect
+        connect $project
+
+    ;;
+
+    sync)
+        # shaker sync from/to project
+        where=${where:-from}
+        synchronize_project $where
+
+    ;;
+
+    box)
+        # Remote vagrant commands
+        vagrant_command=${arguments[1]}
+        remote_vagrant $project $vagrant_command
 
     ;;
 

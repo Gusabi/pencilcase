@@ -7,8 +7,8 @@
 #
 
 
-#NOTE Those are standard unix env variables forced temporary
-HOSTNAME="192.168.0.17"
+server_ip=${SERVERDEPLOY_IP:-192.168.0.17}
+#NOTE standard unix env variables forced temporary
 USER="xavier"
 
 
@@ -42,7 +42,7 @@ function create_dokku_user() {
     #TODO generate id_rsa.pub
     #FIXME root password needed !!
     log "Creating $1 account"
-    cat ~/.ssh/id_rsa.pub | ssh root@$HOSTNAME "gitreceive upload-key $1"
+    cat ~/.ssh/id_rsa.pub | ssh root@$server_ip "gitreceive upload-key $1"
 }
 
 
@@ -51,7 +51,10 @@ function create_dokku_app() {
     log "Initializing Dokku application"
 
     log "Setting up git workspace"
-    git init
+    if [ ! -d ".git" ]; then
+        # No git repos here, initialize it
+        git init
+    fi
     git add -A
     git commit -m "Initial commit"
 
@@ -68,7 +71,7 @@ function create_dokku_app() {
 
     #TODO Automatic creation when first deployment ?
     log "Creating application $2 on $1 account"
-    git remote add $2 git@$HOSTNAME:$2
+    git remote add $2 git@$server_ip:$2
 
     log "Now create at least a Procfile (for help, visit http://blog.daviddollar.org/2011/05/06/introducing-foreman.html)"
     if is_python; then
@@ -116,7 +119,7 @@ function run_in_container() {
     docker_command="docker run app/$1 /bin/bash -c \"echo '$procfile' > /app/Procfile && /start web\""
     echo $docker_command
     #remote_execution $docker_command
-    ssh -n -l $USER $HOSTNAME "$docker_command"
+    ssh -n -l $USER $server_ip "$docker_command"
 }
 
 
@@ -126,7 +129,7 @@ function remote_execution() {
     log "Executing remotely: $ssh_command"
     log
 
-    ssh -n -l $USER $HOSTNAME "$ssh_command"
+    ssh -n -l $USER $server_ip "$ssh_command"
     log
 }
 
@@ -166,6 +169,6 @@ function ssh_container() {
     else
         log "Got container ssh forwarded port: $forwarded_port"
         log "Connecting..."
-        ssh  root@$HOSTNAME -p $forwarded_port
+        ssh  root@$server_ip -p $forwarded_port
     fi
 }
