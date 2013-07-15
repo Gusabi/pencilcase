@@ -71,6 +71,9 @@ fi
 case "${arguments[0]}" in
 
     setup)
+        if [ ! $project ]; then
+            die "You have to sepcifie which project you are working on"
+        fi
         # Set default values
         github_user=${github_user:-Gusabi}
         image=${image:-precise64}
@@ -80,6 +83,9 @@ case "${arguments[0]}" in
     ;;
 
     connect)
+        if [ ! $project ]; then
+            die "You have to sepcifie which project you are working on"
+        fi
         connect $project
 
     ;;
@@ -87,14 +93,18 @@ case "${arguments[0]}" in
     sync)
         # shaker sync from/to project
         where=${where:-from}
-        synchronize_project $where
+        synchronize_project $where $project
 
     ;;
 
     box)
+        # Errors when running commands through ssh, use rest api
+        if [ ! $project ]; then
+            die "You have to sepcifie which project you are working on"
+        fi
         # Remote vagrant commands
         vagrant_command=${arguments[1]}
-        remote_vagrant $project $vagrant_command
+        remote_box $project $vagrant_command
 
     ;;
 

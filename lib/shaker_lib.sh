@@ -11,7 +11,8 @@ source "utils.sh"
 source "dokuant_lib.sh"
 
 
-server_ip=${SERVERDEV_IP:-192.168.0.12}
+#FIXME Always take default value
+server_ip=${SERVERDEV_IP:-192.168.0.17}
 server_port=${SERVERDEV_PORT:-8080}
 
 
@@ -23,11 +24,10 @@ function create_instance() {
     log "Requesting new dev instance for project $project (authored by $github_user)"
     log "Preparing machine $image with $memory Mb of memory..."
 
-    result=$(http $server_ip:$server_port/dev/$project?\
-        ghuser=$github_user\
-        &image=$image\
-        &memory=$memroy\
-        &user=$USER)
+    result=$(http $server_ip:$server_port/dev/$project?ghuser=$github_user\&image=$image\&memory=$memory\&user=$USER)
+    if [ $? != 0 ]; then
+        die "Unable to contact server..."
+    fi
 
     log "Saving identification key..."
     key=$(echo "$result" | jq '.key' | sed -e s/\"//g)
@@ -48,6 +48,18 @@ function create_instance() {
 }
 
 
+function remote_box() {
+    project=$1
+    remote_command=$2
+    log "Running $remote_command on project $project"
+
+    result=$(http $server_ip:$server_port/box/$project?command=$remote_command\&user=$USER)
+    if [ $? != 0 ]; then
+        die "Unable to contact server..."
+    fi
+}
+
+
 function connect() {
     source ".env"
     log "Connecting to $IP:$PORT ..."
@@ -60,7 +72,7 @@ function synchronize_project() {
     #NOTE So an export command as well ?
     #What if no remote project yet ? provides gh_name and clone it ?
     where=$1
-    project=$(get_project_name)
+    project=${2:-$(get_project_name)}
 
 
     if [[ $where == "from" ]]; then
@@ -71,6 +83,7 @@ function synchronize_project() {
             git pull $USER@$server_ip:$project
         else 
             git clone $USER@$server_ip:$project
+            #FIXME did not work
             cd $project
             git remote add $project $USER@$server_ip:$project
         fi

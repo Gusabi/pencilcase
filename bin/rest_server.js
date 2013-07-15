@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 
+//TODO server_ip as local detection
+
 // Rest lib: http://mcavage.github.io/node-restify/
 // Logging: https://github.com/trentm/node-bunyan
 var program = require('commander'),
@@ -9,8 +11,7 @@ var program = require('commander'),
     restify = require('restify'),
     mu = require('mu2'),
     fs = require('fs'),
-    spawn = require('child_process').spawn,
-    config = require('config');
+    spawn = require('child_process').spawn;
 
 program
   .version('0.0.1')
@@ -19,6 +20,20 @@ program
   .option('-s, --server <adress>', 'mysql database adress', String, 'localhost')
   .option('-p, --password <chut>', 'mysql password', String, '')
   .parse(process.argv);
+
+
+function get_local_ip() {
+    varos = require('os');
+    var networkInterfaces = os.networkInterfaces();
+
+    // Prefere ethernet over wifi
+    if ('eth0' in network ) 
+        interface_name = 'eth0'
+    else if ('wlan0' in network ) 
+        interface_name = 'wlan0'
+
+    return network[interface_name][0]['address']
+}
 
 
 function fireup_env(configuration, filename, build_env_callback) {
@@ -52,6 +67,45 @@ function finalize(file_path, response_callback) {
 }
 
 
+function box_management(req, res, next) {
+    log('Box::Received request with params ', req.params)
+    log('Box::Running on project ', req.params.project, ': ', req.params.command)
+
+    // run vagrant $command
+    //TODO commands that need interaction (vagrant destroy) fail
+    log('Dev::Cloning repos ' + req.params.project + ' of ' + req.params.ghuser)
+    var child = spawn('manage_box.sh', ['run', req.params.command, req.params.project]);
+
+    child.stdout.on('data', function (data) {
+        //NOTE verbose condition ?
+        log('Dev::vm_starter:stdout::' + data);
+    });
+
+    child.stderr.on('data', function (data) {
+        log('Dev::vm_starter::stderr::' + data);
+    });
+
+    child.on('exit', function (code, signal) {
+        if (code == 0) {
+            log('Dev::vm_starter::Successful');
+        }
+        else {
+            log('** Dev::vm_starter::Error');
+            return undefined;
+        }
+        child.stdin.end()
+        child = undefined;
+    })
+    log('Spawned process (' + child.pid + ')')
+
+    log('Sending back ackowledgment')
+    //TODO We don't see local log from remote
+    res.send({'status': 'done'});
+    
+    return next();
+}
+
+
 function dev_env(req, res, next) {
     // Request: http://127.0.0.1:8080/dev/quantrade?image=quantal64\&memory=1024
     //TODO Default values
@@ -74,7 +128,7 @@ function dev_env(req, res, next) {
     fireup_env(box_configuration, 'vagrant_vb.tpl', function() {
         // run vagrant up
         log('Dev::Cloning repos ' + req.params.project + ' of ' + req.params.ghuser)
-        var child = spawn('manage_box.sh', [req.params.ghuser, req.params.project]);
+        var child = spawn('manage_box.sh', ['create', req.params.ghuser, req.params.project]);
 
         child.stdout.on('data', function (data) {
             //NOTE verbose condition ?
@@ -101,7 +155,7 @@ function dev_env(req, res, next) {
         finalize('/home/xavier/.vagrant.d/insecure_private_key', function (ssh_key) {
             log('Sending back connection informations')
             res.send(
-                {'ip': '192.168.0.12',
+                {'ip': get_local_ip(),
                  'port': 2222,
                  'key': ssh_key
             })
@@ -113,6 +167,7 @@ function dev_env(req, res, next) {
     log('Request processed')
     return next();
 };
+
 
 var server = restify.createServer({name: 'R&D test'});
 
@@ -126,7 +181,7 @@ server.use(restify.throttle({
     rate: 50,
     ip: true, // throttle based on source ip address
     overrides: {
-        '192.168.0.12': {
+        get_local_ip(): {
             rate: 0, // unlimited
     burst: 0
         }
@@ -135,9 +190,10 @@ server.use(restify.throttle({
 
 
 server.get('/dev/:project', dev_env);
+server.get('/box/:project', box_management);
 
 var port = 8080;
-var ip = '192.168.0.12';
+var ip = get_local_ip();
 server.listen(port, ip, function() {
     log(server.name + ' listening at ' + server.url);
 });
@@ -151,7 +207,7 @@ process.on('SIGINT', function() {
 
 process.on('exit', function() {
     //connection.end();
-    log('Shutting down database and REST server');
+    log('Shutting down REST server');
 });
 
 process.on('uncaughtException', function(err) {

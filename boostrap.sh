@@ -28,6 +28,8 @@ function install_files() {
     fi
     log "Copying dokuant scripts to local bin"
     cp ./bin/* $HOME/local/bin
+    chmod +x $HOME/local/bin/*
+    chown $USER $HOME/local/bin/*
 
     if [ ! -d $HOME/local/lib ]; then
         log "Creating ~/local/lib directory"
@@ -36,6 +38,7 @@ function install_files() {
     fi
     log "Moving dokuant lib to local lib"
     cp ./lib/* $HOME/local/lib
+    chown $USER $HOME/local/lib/*
 
     if [ ! -d $HOME/local/templates ]; then
         log "Creating ~/local/templates directory"
@@ -43,6 +46,7 @@ function install_files() {
     fi
     log "Copying dokuant templates to local templates"
     cp ./templates/* $HOME/local/templates
+    chown $USER $HOME/local/templates/*
 
     log "Setting environment variable"
     echo "export SERVERDEV_IP=$2" >> $SHELL_CONFIG_FILE
