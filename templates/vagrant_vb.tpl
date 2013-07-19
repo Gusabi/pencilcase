@@ -10,4 +10,6 @@ Vagrant.configure("2") do |config|
     config.vm.provider :virtualbox do |vb|
         vb.customize ["modifyvm", :id, "--memory", {{ memory }}, "--cpus", 2]
     end
+
+    config.vm.provision "shell", path: "/home/xavier/local/templates/configure.sh"
 end

@@ -1,4 +1,19 @@
 #!/usr/bin/env node
+// encoding: utf-8
+//
+// Copyright 2013 Xavier Bruhiere
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 'use strict';
 
 //TODO server_ip as local detection
@@ -23,15 +38,17 @@ program
 
 
 function get_local_ip() {
-    varos = require('os');
-    var networkInterfaces = os.networkInterfaces();
+    var os = require('os');
+    var network = os.networkInterfaces();
+    var interface_name = undefined
 
     // Prefere ethernet over wifi
     if ('eth0' in network ) 
-        interface_name = 'eth0'
+        interface_name = 'eth0';
     else if ('wlan0' in network ) 
         interface_name = 'wlan0'
 
+    log('Detected interface', interface_name);
     return network[interface_name][0]['address']
 }
 
@@ -73,7 +90,6 @@ function box_management(req, res, next) {
 
     // run vagrant $command
     //TODO commands that need interaction (vagrant destroy) fail
-    log('Dev::Cloning repos ' + req.params.project + ' of ' + req.params.ghuser)
     var child = spawn('manage_box.sh', ['run', req.params.command, req.params.project]);
 
     child.stdout.on('data', function (data) {
@@ -170,6 +186,7 @@ function dev_env(req, res, next) {
 
 
 var server = restify.createServer({name: 'R&D test'});
+var ip = get_local_ip()
 
 server.use(restify.acceptParser(server.acceptable));
 server.use(restify.authorizationParser());
@@ -181,7 +198,7 @@ server.use(restify.throttle({
     rate: 50,
     ip: true, // throttle based on source ip address
     overrides: {
-        get_local_ip(): {
+        ip: {
             rate: 0, // unlimited
     burst: 0
         }
@@ -193,7 +210,6 @@ server.get('/dev/:project', dev_env);
 server.get('/box/:project', box_management);
 
 var port = 8080;
-var ip = get_local_ip();
 server.listen(port, ip, function() {
     log(server.name + ' listening at ' + server.url);
 });

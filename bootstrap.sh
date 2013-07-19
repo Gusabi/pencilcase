@@ -1,10 +1,19 @@
 #! /bin/bash
+# encoding: utf-8
 #
-# boostrap.sh
-# Copyright (C) 2013 xavier <xavier@laptop-300E5A>
+# Copyright 2013 Xavier Bruhiere
 #
-# Distributed under terms of the MIT license.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 
 set -e
@@ -24,6 +33,7 @@ function install_files() {
     if [ ! -d $HOME/local/bin ]; then
         log "Creating ~/local/bin directory"
         mkdir -p $HOME/local/bin
+        chown $USER $HOME/local/bin
         echo "export PATH=\$PATH:$HOME/local/bin" >> $SHELL_CONFIG_FILE
     fi
     log "Copying dokuant scripts to local bin"
@@ -34,15 +44,18 @@ function install_files() {
     if [ ! -d $HOME/local/lib ]; then
         log "Creating ~/local/lib directory"
         mkdir -p $HOME/local/lib
+        chown $USER $HOME/local/lib
         echo "export PATH=\$PATH:$HOME/local/lib" >> $SHELL_CONFIG_FILE
     fi
     log "Moving dokuant lib to local lib"
     cp ./lib/* $HOME/local/lib
+    #FIXME Does not work
     chown $USER $HOME/local/lib/*
 
     if [ ! -d $HOME/local/templates ]; then
         log "Creating ~/local/templates directory"
         mkdir -p $HOME/local/templates
+        chown $USER $HOME/local/templates
     fi
     log "Copying dokuant templates to local templates"
     cp ./templates/* $HOME/local/templates
@@ -56,6 +69,8 @@ function install_files() {
 
 
 function install_dependencies() {
+    #FIXME httpie would not work on ubuntu 12.04
+    #FIXME jq in bin is 64 bits dependant, detect and wget the stuff
     packages=""
     if ! is_installed "git"; then
         packages+=" git"
