@@ -90,7 +90,7 @@ function box_management(req, res, next) {
 
     // run vagrant $command
     //TODO commands that need interaction (vagrant destroy) fail
-    var child = spawn('manage_box.sh', ['run', req.params.command, req.params.project]);
+    var child = spawn('manage_box.sh', ['run', req.params.command, req.params.project, 'virtualbox']);
 
     child.stdout.on('data', function (data) {
         //NOTE verbose condition ?

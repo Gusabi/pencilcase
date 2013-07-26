@@ -17,14 +17,14 @@
 
 #TODO Crash if $# < 3
 
-project=$3
 instruction=$1
-if [[ "$instruction" == "destroy" ]]; then
-    instruction="destroy --force"
-fi
+# $2 depends on $1
+project=$3
+provider=$4
 
 if [[ "$instruction" == "create" ]]; then
-    git_repos="https://github.com/$2/$project"
+    gh_user=$2
+    git_repos="https://github.com/$gh_user/$project"
     if [ ! -d $project ]; then
         git clone $git_repos $project
     fi
@@ -36,11 +36,24 @@ if [[ "$instruction" == "create" ]]; then
     if [ ! -f $project/Vagrantfile ]; then
         mv Vagrantfile $project
     fi
-    vagrant_command="up"
+
+    if [ -n "$provider" ]; then
+        vagrant_command="up --provider=$provider"
+    else
+        vagrant_command="up"
+    fi
 
 elif [[ "$instruction" == "run" ]]; then
     if [ -f $project/Vagrantfile ]; then
         vagrant_command=$2
+
+        if [[ "$vagrant_command" == "destroy" ]]; then
+            vagrant_command="destroy --force"
+
+        elif [ "$vagrant_command" == "up" -a -n "$provider" ]; then
+            vagrant_command="up --provider=$provider"
+        fi
+
     else
         exit 1
     fi

@@ -64,6 +64,7 @@ function create_dokku_app() {
         # No git repos here, initialize it
         git init
     fi
+    #FIXME If nothing to do, will stop. rm .git above ?
     git add -A
     git commit -m "Initial commit"
 
