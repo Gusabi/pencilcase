@@ -46,15 +46,15 @@ apt-get clean 2>&1 >> "$LOGS"
 
 echo "Cloning dotfile repository"
 # --recursive ships vim plugins with the rest
-git clone --recursive https://github.com/Gusabi/Dotfiles.git $HOME/.dotfiles
+git clone --recursive https://github.com/Gusabi/Dotfiles.git $HOME/.dotfiles 2>&1 >> "$LOGS"
 
 echo "Bootstraping environment"
 #FIXME No arguments... Ask question and detect non-interactivity ? ENV var ?
-GUSER=${GUSER:-"robot"}
-GMAIL=${GMAIL:-"robot@example.com"}
+GUSER=${GIT_USER:-"robot"}
+GMAIL=${GIT_MAIL:-"robot@example.com"}
 shell=${shell:-"bash"}
 NODE_VERSION=${NODE_VERSION:-"0.10.12"}
-PLUGINS=${shell:-""}
+PLUGINS=${PLUGINS:-""}
 
 #$HOME/.dotfiles/bootstrap.sh 2>&1 "$LOGS"
 $HOME/.dotfiles/bootstrap.sh -u $GUSER -m $GMAIL -n $NODE_VERSION -s $shell -p $PLUGINS
