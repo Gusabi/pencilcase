@@ -16,16 +16,26 @@
 # limitations under the License.
 
 
+function log () {
+  printf "\r\033[00;36m  [ \033[00;34m..\033[00;36m ] $1\033[0m\n"
+}
+
+
+success () {
+  printf "\r\033[00;36m  [ \033[00;32mOK\033[00;36m ] $1\033[0m\n"
+}
+
+
 LOGS="dotfiles.log"
-echo "Logs will be stored in $PWD/$LOGS"
+log "Logs will be stored in $PWD/$LOGS"
 
 
 # Run a full apt-get update first.
-echo "Updating apt-get caches..."
+log "Updating apt-get caches..."
 apt-get -y update 2>&1 >> "$LOGS"
 
 
-echo "Installing required packages"
+log "Installing required packages"
 apt-get -y --force-yes install git vim curl openssh-client openssh-server libmysqlclient-dev mysql-client 2>&1 >> "$LOGS"
 if [[ "$HOME" == "/root" ]]; then
     # We are in a vagrant box
@@ -33,22 +43,22 @@ if [[ "$HOME" == "/root" ]]; then
 elif [[ "$HOME" == "/" ]]; then
     # We are in a docker (lxc ?) container
     packages_path="/app"
-    export HOME=""
+    export HOME="/root"
 else
     packages_path="."
 fi
 if [ -f $packages_path/packages.txt ]; then
-    echo "Found extra package list, installing them"
+    log "Found extra package list, installing them"
     xargs apt-get install -y --force-yes < $packages_path/packages.txt 2>&1 >> "$LOGS"
 fi
-echo "Cleaning..."
+success "Done, cleaning..."
 apt-get clean 2>&1 >> "$LOGS"
 
-echo "Cloning dotfile repository"
+log "Cloning dotfile repository..."
 # --recursive ships vim plugins with the rest
 git clone --recursive https://github.com/Gusabi/Dotfiles.git $HOME/.dotfiles 2>&1 >> "$LOGS"
 
-echo "Bootstraping environment"
+success "Done, bootstraping environment..."
 #FIXME No arguments... Ask question and detect non-interactivity ? ENV var ?
 GUSER=${GIT_USER:-"robot"}
 GMAIL=${GIT_MAIL:-"robot@example.com"}
