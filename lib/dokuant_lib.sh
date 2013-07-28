@@ -17,8 +17,8 @@
 
 
 server_ip=${SERVERDEPLOY_IP:-192.168.0.17}
+server_port=${SERVERDEPLOY_PORT:-4242}
 #NOTE standard unix env variables forced temporary
-USER="xavier"
 
 
 function get_project_name() {
@@ -115,43 +115,22 @@ function deploy_dokku_app() {
 
     log "Deploying to server application $project"
     git push $project master
+
+    #TODO Use python script to fech and store informations
+    #TODO Attach
 }
 
 
 function run_in_container() {
-    #TODO if no command provided ($2) read procfile
     if [[ $# == 2 ]]; then
+        log "Executing in container: $2"
         procfile="web: $2"
     else
+        log "Reading Procfile to execute"
         procfile=`<Procfile`
     fi
 
-    docker_command="docker run app/$1 /bin/bash -c \"echo '$procfile' > /app/Procfile && /start web\""
-    echo $docker_command
-    #remote_execution $docker_command
-    ssh -n -l $USER $server_ip "$docker_command"
-}
-
-
-function remote_execution() {
-    #TODO manage and indicate fails
-    ssh_command=$1
-    log "Executing remotely: $ssh_command"
-    log
-
-    ssh -n -l $USER $server_ip "$ssh_command"
-    log
-}
-
-
-function get_container_id() {
-    echo "\`cat /home/git/$1/CONTAINER\`"
-}
-
-
-function fetch_container_info() {
-    #TODO Json processing of the anwser
-    remote_execution "docker inspect $(get_container_id $1)"
+    log "Not available yet"
 }
 
 
@@ -165,20 +144,19 @@ function repl_container() {
     else
         #FIXME Does not work
         docker_command="docker run -i -t app/$container_name $interpreter"
-        remote_execution $docker_command
     fi
 }
 
 
 function ssh_container() {
-    forwarded_port=$(remote_execution "docker port $(get_container_id $1) 22") 
-    #FIXME Check for error
-    if [[  "$forwarded_port" =~ "*docker*" ]]; then
-        # This is the log message, we failed...
-        die "Unable to reach forwrded port..."
-    else
-        log "Got container ssh forwarded port: $forwarded_port"
-        log "Connecting..."
-        ssh  root@$server_ip -p $forwarded_port
+    #TODO Save ssh key to avoid password stuff
+    project=$1
+
+    ssh_port=$(python -c "from docker_client import DockerClient; print DockerClient(host='$server_ip', port=$server_port).get_ssh_mapping('app/$project:latest')")
+    log "Asking server for SSH Port: $ssh_port"
+
+    if [ $ssh_port ]; then
+        log "Connecting to the box"
+        ssh root@$server_ip -p $ssh_port
     fi
 }

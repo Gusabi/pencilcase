@@ -81,3 +81,14 @@ function create_git_app () {
 }
 
 # pip dev state upgrade: pip install --upgrade https://github.com/jkbr/httpie/tarball/master
+
+
+function remote_execution() {
+    #TODO manage and indicate fails
+    ssh_command=$1
+    log "Executing remotely: $ssh_command"
+    log
+
+    ssh -n -l $USER $server_ip "$ssh_command"
+    log
+}

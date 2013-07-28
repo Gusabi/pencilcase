@@ -47,6 +47,7 @@ elif [[ "$HOME" == "/" ]]; then
 else
     packages_path="."
 fi
+
 if [ -f $packages_path/packages.txt ]; then
     log "Found extra package list, installing them"
     xargs apt-get install -y --force-yes < $packages_path/packages.txt 2>&1 >> "$LOGS"
@@ -54,17 +55,27 @@ fi
 success "Done, cleaning..."
 apt-get clean 2>&1 >> "$LOGS"
 
-log "Cloning dotfile repository..."
-# --recursive ships vim plugins with the rest
-git clone --recursive https://github.com/Gusabi/Dotfiles.git $HOME/.dotfiles 2>&1 >> "$LOGS"
+#TODO json or yaml format + other configs: apt, pip, ...
+if [ -f $packages_path/dev.env ]; then
+    log "Reading configuration"
+    . dev.env
+fi
 
-success "Done, bootstraping environment..."
-#FIXME No arguments... Ask question and detect non-interactivity ? ENV var ?
-GUSER=${GIT_USER:-"robot"}
-GMAIL=${GIT_MAIL:-"robot@example.com"}
+GIT_USER=${GIT_USER:-"enoch"}
+GIT_MAIL=${GIT_MAIL:-"enoch@example.com"}
 shell=${shell:-"bash"}
 NODE_VERSION=${NODE_VERSION:-"0.10.12"}
 PLUGINS=${PLUGINS:-""}
 
-#$HOME/.dotfiles/bootstrap.sh 2>&1 "$LOGS"
+log "Git user: $GIT_USER"
+log "Git mail: $GIT_MAIL"
+log "Shell: $shell"
+log "Node version: $NODE"
+log "Plugins: $PLUGINS"
+
+log "Cloning dotfile repository..."
+# --recursive ships vim plugins and gitignore with the rest
+git clone --recursive https://github.com/Gusabi/Dotfiles.git $HOME/.dotfiles 2>&1 >> "$LOGS"
+
+success "Done, bootstraping environment..."
 $HOME/.dotfiles/bootstrap.sh -u $GUSER -m $GMAIL -n $NODE_VERSION -s $shell -p $PLUGINS

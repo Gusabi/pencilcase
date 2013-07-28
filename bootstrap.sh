@@ -62,9 +62,11 @@ function install_files() {
     chown $USER $HOME/local/templates/*
 
     log "Setting environment variable"
-    echo "export SERVERDEV_IP=$2" >> $SHELL_CONFIG_FILE
     echo "export SERVERDEPLOY_IP=$3" >> $SHELL_CONFIG_FILE
+    echo "export SERVERDEPLOY_PORT=4242" >> $SHELL_CONFIG_FILE
+    echo "export SERVERDEV_IP=$2" >> $SHELL_CONFIG_FILE
     echo "export SERVERDEV_PORT=8080" >> $SHELL_CONFIG_FILE
+    echo "export PYTHONPATH=PYTHONPATH:$HOME/local/lib" >> $SHELL_CONFIG_FILE
 }
 
 
