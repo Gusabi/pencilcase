@@ -28,6 +28,19 @@ log "_______________________"
 log ""
 
 
+function sanitize_platform() {
+    if [ "$USER" == "" ]; then
+        # This a docker container
+        export HOME="/root"
+        export USER=$(whoami)
+    fi
+
+    #NOTE That is not default name when cloning
+    export dotfiles_dir="$HOME/.dotfiles"
+    export LOGS="$dotfiles_dir/dotfiles.log"
+}
+
+
 function install_files() {
     SHELL_CONFIG_FILE=$1
     if [ ! -d $HOME/local/bin ]; then
@@ -65,12 +78,13 @@ function install_files() {
     echo "export SERVERDEPLOY_IP=$3" >> $SHELL_CONFIG_FILE
     echo "export SERVERDEPLOY_PORT=4242" >> $SHELL_CONFIG_FILE
     echo "export SERVERDEV_IP=$2" >> $SHELL_CONFIG_FILE
-    echo "export SERVERDEV_PORT=8080" >> $SHELL_CONFIG_FILE
+    echo "export SERVERDEV_PORT=4242" >> $SHELL_CONFIG_FILE
     echo "export PYTHONPATH=PYTHONPATH:$HOME/local/lib" >> $SHELL_CONFIG_FILE
 }
 
 
 function install_dependencies() {
+    #LAB_PATH=$1
     #FIXME httpie would not work on ubuntu 12.04
     #FIXME jq in bin is 64 bits dependant, detect and wget the stuff
     packages=""
@@ -96,6 +110,7 @@ function install_dependencies() {
         git config --global user.name $user_name
     fi
 
+    #pip install -r $LAB_PATH/requirements.txt
     pip install -r requirements.txt
 }
 
@@ -118,17 +133,20 @@ do
         SERVERENV_IP=$OPTARG
         ;;
     "?")
-        echo "Unknown option $OPTARG"
+        fail "Unknown option $OPTARG"
         ;;
     ":")
-        echo "No argument value for option $OPTARG"
+        fail "No argument value for option $OPTARG"
         ;;
     *)
         # Should not occur
-        echo "Unknown error while processing options"
+        die "Unknown error while processing options"
         ;;
   esac
 done
+
+
+sanitize_platform
 
 
 if [[ $SHELL == "/bin/bash" ]]; then 
@@ -146,19 +164,24 @@ fi
 
 
 # Default values
-SERVERENV_IP=${SERVERENV_IP:-192.168.0.17}
-SERVERDEPLOY_IP=${SERVERDEPLOY_IP:-192.168.0.17}
+export SERVERENV_IP=${SERVERENV_IP:-192.168.0.17}
+export SERVERDEPLOY_IP=${SERVERDEPLOY_IP:-192.168.0.17}
+#export INSTALL_PATH=${INSTALL_PATH:-$PWD}
 
+#NOTE The export keyword should make those parameters unneccessary
 install_files $SHELL_CONFIG_FILE $SERVERENV_IP $SERVERDEPLOY_IP
+#install_dependencies $INSTALL_PATH
 install_dependencies
-log "Done, repopen a terminal to make changes effective"
-success "Dokuant ready to use, Yay !"
+
+log "Done, loading changes..."
+source $SHELL_CONFIG_FILE
+
+success "QuantLab ready to use, Yay !"
 
 #NOTE Root execution might causes permission issue for copied files
 #FIXME install_dependencies needs sudo permission (should be fixed/ok)
 #FIXME Generate_quant_env is not executable after installation (should be fixed)
 #FIXME If git has never been used, git config will stop execution (should be fixed)
 #FIXME Install virtualenv (should be fixed)
-#FIXME Every ssh command requires to be xavier (VM would solve this)
 #FIXME User creation: automatic key generation if needed
-#TODO Remplacer logbook par logging pour réduire les dépendances
+#TODO Remplace logbook by logging or clint to reduce dependencies

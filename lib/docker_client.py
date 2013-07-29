@@ -36,8 +36,8 @@ class Image(object):
         #NOTE Not really cool, but http has cool prints
         os.system(
             'http {}:{}/images/{}/json'.format(
-                self._client.properties['host'],
-                self._client.properties['port'],
+                os.environ['SERVERDEV_IP'],
+                os.environ['SERVERDEV_PORT'],
                 self.id))
 
     def _get_id(self, base, tag=None):
@@ -81,8 +81,8 @@ class Container(object):
         #NOTE Not really cool
         os.system(
             'http {}:{}/containers/{}/json'.format(
-                self._client.properties['host'],
-                self._client.properties['port'],
+                os.environ['SERVERDEV_IP'],
+                os.environ['SERVERDEV_PORT'],
                 self.id))
 
     def _get_id(self, name, is_running=False):
@@ -115,7 +115,11 @@ class Container(object):
                 puts(colored.red('Streaming stopped'))
 
     def get_port_mapping(self, port):
-        forwarded_port = self._client.port(self.id, port)
+        try:
+            forwarded_port = self._client.port(self.id, port)
+        except TypeError:
+            return None
+        #NOTE May be useless now
         if not forwarded_port:
             return None
 
@@ -155,8 +159,6 @@ class DockerClient(object):
             base_url='http://{}:{}'.format(host, port), version=version)
         self.properties = self._client.info()
         self.properties.update(self._client.version())
-        self.properties['port'] = port
-        self.properties['host'] = host
 
     def inspect(self):
         pprint(self.properties)

@@ -37,11 +37,14 @@ apt-get -y update 2>&1 >> "$LOGS"
 
 log "Installing required packages"
 apt-get -y --force-yes install git vim curl openssh-client openssh-server libmysqlclient-dev mysql-client 2>&1 >> "$LOGS"
+
+#TODO Better env detection ?
 if [[ "$HOME" == "/root" ]]; then
     # We are in a vagrant box
     packages_path="/vagrant"
 elif [[ "$HOME" == "/" ]]; then
     # We are in a docker (lxc ?) container
+    #NOTE Am I sure it's in /app ? maybe in build ?
     packages_path="/app"
     export HOME="/root"
 else
@@ -64,7 +67,7 @@ fi
 GIT_USER=${GIT_USER:-"enoch"}
 GIT_MAIL=${GIT_MAIL:-"enoch@example.com"}
 shell=${shell:-"bash"}
-NODE_VERSION=${NODE_VERSION:-"0.10.12"}
+NODE=${NODE:-"0.10.12"}
 PLUGINS=${PLUGINS:-""}
 
 log "Git user: $GIT_USER"
@@ -78,4 +81,4 @@ log "Cloning dotfile repository..."
 git clone --recursive https://github.com/Gusabi/Dotfiles.git $HOME/.dotfiles 2>&1 >> "$LOGS"
 
 success "Done, bootstraping environment..."
-$HOME/.dotfiles/bootstrap.sh -u $GUSER -m $GMAIL -n $NODE_VERSION -s $shell -p $PLUGINS
+$HOME/.dotfiles/bootstrap.sh -u $GUSER -m $GMAIL -n $NODE -s $shell -p $PLUGINS

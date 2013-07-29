@@ -18,7 +18,6 @@
 
 server_ip=${SERVERDEPLOY_IP:-192.168.0.17}
 server_port=${SERVERDEPLOY_PORT:-4242}
-#NOTE standard unix env variables forced temporary
 
 
 function get_project_name() {
@@ -109,12 +108,10 @@ function deploy_dokku_app() {
         log "Committing changes ($commit_comment)"
         git add -A
         git commit -m "$commit_comment"
-    else
-        success "Nothing to commit, working directory clean"
-    fi
 
-    log "Deploying to server application $project"
-    git push $project master
+        log "Deploying to server application $project"
+        git push $project master
+    else success "Nothing to commit, working directory clean" fi
 
     #TODO Use python script to fech and store informations
     #TODO Attach
@@ -152,10 +149,10 @@ function ssh_container() {
     #TODO Save ssh key to avoid password stuff
     project=$1
 
-    ssh_port=$(python -c "from docker_client import DockerClient; print DockerClient(host='$server_ip', port=$server_port).get_ssh_mapping('app/$project:latest')")
-    log "Asking server for SSH Port: $ssh_port"
+    ssh_port=$(python -c "from docker_client import DockerClient; print DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').forwarded_ssh()")
 
     if [ $ssh_port ]; then
+        log "Asking server for SSH Port... $ssh_port"
         log "Connecting to the box"
         ssh root@$server_ip -p $ssh_port
     fi

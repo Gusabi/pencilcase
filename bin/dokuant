@@ -17,7 +17,6 @@
 # vi: set ft=bash :
 
 set -e
-#clear
 
 source utils.sh
 source dokuant_lib.sh
@@ -25,11 +24,34 @@ source dokuant_lib.sh
 
 log "       Dokuant       "
 log "_____________________"
-log ""
+echo
 
 
 function usage() {
-    log "Usage: $0 command [OPTIONS]"
+    log "Usage: $0 command [SUB-COMMAND]"
+}
+
+
+function display_help() {
+    usage
+    echo
+
+    log "Available commands:"
+    log "-\tdokuant create-user\t\tUpload on the server an ssh key"
+    log "-\tdokuant create-app\t\tMake your app ready to deploy"
+    log "-\tdokuant [--attach] deploy\tPush your application to the server.\n\t\t\t\t\t\tIf attach is specified, it will catch logs, right after."
+    log "-\tdokuant connect\t\t\tUse ssh to connect to your container"
+    log "-\tdokuant show <apps|images>\timages: Show available images you can build your application on\n\t\t\t\t\t\tapps:\tShow your running apps"
+    log "-\tdokuant help\t\t\tDisplay this message"
+    echo
+    log "Application relative commands: dokuant app <sub-command>"
+    log "-\tdokuant app <sub-command>"
+    log "-\t\tapp start|stop|kill|remove"
+    log "-\t\tapp infos\t\tGet application configuration"
+    log "-\t\tapp commit name\t\tSave the state of the container under 'name'"
+    log "-\t\tapp push\t\tRegister the image on docker index"
+    log "-\t\tapp attach\t\tBlock waiting for logs and display them"
+    log "-\t\tapp logs\t\tDisplay application logs"
 }
 
 
@@ -58,42 +80,44 @@ case "$1" in
             commit_comment="Automatic commit"
         fi
         deploy_dokku_app $PROJECT $commit_comment
-        success "Done, fetching informations"
-        #fetch_container_infos $PROJECT
+        #NOTE Should be able to attach ?
 
     ;;
 
     app)
         case "$2" in
+            #TODO restart)  (does not work with python for now)
             start)
                 if [ "$3" == "attach" ]; then
                     attach="True"
                 else
                     attach="False"
                 fi
-                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT').start(attach=$attach)"
-                success "Application killed"
+                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').start(attach=$attach)"
+                success "Application started"
             ;;
             kill)
-                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT').kill()"
+                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').kill()"
                 success "Application killed"
             ;;
             stop)
-                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT').stop()"
+                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').stop()"
                 success "Application stopped"
             ;;
             infos)
                 #NOTE Only on container for now
-                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT').inspect()"
+                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').inspect()"
             ;;
             commit)
+                #FIXME I'm pretty sure it deos not work
+                #TODO If no $3, make it current time
                 #TODO Understand the whole concept of repository
                 tag=$3
-                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT').commit(tag='$tag')"
-                succes "Application committed to app/$PROJECT:$tag"
+                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').commit(tag='$tag')"
+                success "Application committed to app/$PROJECT:$tag"
             ;;
             push)
-                log "Not available yet"
+                die "Not available yet"
             ;;
             remove)
                 python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').remove()"
@@ -115,6 +139,23 @@ case "$1" in
         interpreter=$2
         #TODO Right now ssh is the only working interpreter
         repl_container $PROJECT "ssh"
+
+    ;;
+
+    show)
+        #TODO Add docker search images
+        if [ "$2" == "apps" ]; then
+            python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).list_containers()"
+        elif [ "$2" == "images" ]; then
+            python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).list_images()"
+        else
+            die "Unknown object: $2"
+        fi
+
+    ;;
+
+    help)
+        display_help
 
     ;;
 

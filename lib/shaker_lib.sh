@@ -71,6 +71,7 @@ function remote_box() {
 
 function connect() {
     source ".env"
+    #TODO Check that they exist
     log "Connecting to $IP:$PORT ..."
     ssh -i $HOME/.box_identity_key vagrant@$IP -p $PORT
 }
