@@ -17,14 +17,13 @@
 
 
 set -e
-clear
 
 
 source lib/utils.sh
 
 
-log "    Dokuan & Shaker    "
-log "_______________________"
+log "     Dokuan & Shaker     "
+log "_________________________"
 log ""
 
 
@@ -37,7 +36,8 @@ function sanitize_platform() {
 
     #NOTE That is not default name when cloning
     export dotfiles_dir="$HOME/.dotfiles"
-    export LOGS="$dotfiles_dir/dotfiles.log"
+    #export LOGS="$dotfiles_dir/dotfiles.log"
+    export LOGS="/tmp/dotfiles.log"
 }
 
 
@@ -75,8 +75,6 @@ function install_files() {
     chown $USER $HOME/local/templates/*
 
     log "Setting environment variable"
-    echo "export SERVERDEPLOY_IP=$3" >> $SHELL_CONFIG_FILE
-    echo "export SERVERDEPLOY_PORT=4242" >> $SHELL_CONFIG_FILE
     echo "export SERVERDEV_IP=$2" >> $SHELL_CONFIG_FILE
     echo "export SERVERDEV_PORT=4242" >> $SHELL_CONFIG_FILE
     echo "export PYTHONPATH=PYTHONPATH:$HOME/local/lib" >> $SHELL_CONFIG_FILE
@@ -123,14 +121,11 @@ fi
 
 
 #TODO help
-while getopts ":d:e:" optname
+while getopts ":d:" optname
 do
   case "$optname" in
     "d")
-        SERVERDEPLOY_IP=$OPTARG
-        ;;
-    "e")
-        SERVERENV_IP=$OPTARG
+        SERVERDEV_IP=$OPTARG
         ;;
     "?")
         fail "Unknown option $OPTARG"
@@ -164,16 +159,16 @@ fi
 
 
 # Default values
-export SERVERENV_IP=${SERVERENV_IP:-192.168.0.17}
-export SERVERDEPLOY_IP=${SERVERDEPLOY_IP:-192.168.0.17}
+export SERVERDEV=${SERVERDEV_IP:-192.168.0.17}
 #export INSTALL_PATH=${INSTALL_PATH:-$PWD}
 
 #NOTE The export keyword should make those parameters unneccessary
-install_files $SHELL_CONFIG_FILE $SERVERENV_IP $SERVERDEPLOY_IP
+install_files $SHELL_CONFIG_FILE $SERVERDEV_IP
 #install_dependencies $INSTALL_PATH
 install_dependencies
 
 log "Done, loading changes..."
+#FIXME Don't know why but following failed 
 source $SHELL_CONFIG_FILE
 
 success "QuantLab ready to use, Yay !"

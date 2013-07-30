@@ -111,7 +111,9 @@ function deploy_dokku_app() {
 
         log "Deploying to server application $project"
         git push $project master
-    else success "Nothing to commit, working directory clean" fi
+    else 
+        success "Nothing to commit, working directory clean" 
+    fi
 
     #TODO Use python script to fech and store informations
     #TODO Attach

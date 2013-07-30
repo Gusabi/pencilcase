@@ -26,8 +26,8 @@ success () {
 }
 
 
-LOGS="dotfiles.log"
-log "Logs will be stored in $PWD/$LOGS"
+LOGS="/tmp/dotfiles.log"
+log "Logs will be stored in /tmp/$LOGS"
 
 
 # Run a full apt-get update first.
@@ -40,7 +40,7 @@ apt-get -y --force-yes install git vim curl openssh-client openssh-server libmys
 
 #TODO Better env detection ?
 if [[ "$HOME" == "/root" ]]; then
-    # We are in a vagrant box
+    # We are in a vagrant box, at bootstrap
     packages_path="/vagrant"
 elif [[ "$HOME" == "/" ]]; then
     # We are in a docker (lxc ?) container

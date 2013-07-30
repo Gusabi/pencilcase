@@ -16,6 +16,8 @@
 # limitations under the License.
 # vi: set ft=bash :
 
+#TODO test to deploy an app without user create-user
+
 set -e
 
 source utils.sh
@@ -86,6 +88,7 @@ case "$1" in
 
     app)
         case "$2" in
+            #TODO execute
             #TODO restart)  (does not work with python for now)
             start)
                 if [ "$3" == "attach" ]; then

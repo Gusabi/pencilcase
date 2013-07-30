@@ -113,6 +113,9 @@ class Container(object):
                     puts(colored.blue(stream.next()))
             except KeyboardInterrupt:
                 puts(colored.red('Streaming stopped'))
+            #FIXME Should not happen
+            except StopIteration:
+                puts(colored.red('Could not fetch more logs'))
 
     def get_port_mapping(self, port):
         try:
