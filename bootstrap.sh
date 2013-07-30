@@ -19,7 +19,33 @@
 set -e
 
 
-source lib/utils.sh
+function log () {
+  printf "\r\033[00;36m  [ \033[00;34m..\033[00;36m ] $1\033[0m\n"
+}
+
+
+function success () {
+  printf "\r\033[00;36m  [ \033[00;32mOK\033[00;36m ] $1\033[0m\n"
+}
+
+
+function fail () {
+  printf "\r\033[00;36m  [\033[00;31mFAIL\033[00;36m] $1\033[0m\n"
+  echo ''
+}
+
+
+function die()
+{
+    fail "${@}"
+    exit 1
+} 
+
+
+function is_installed () {
+    dpkg -s "$1" >/dev/null 2>&1
+    return $?
+}
 
 
 log "     Dokuan & Shaker     "
@@ -28,16 +54,17 @@ log ""
 
 
 function sanitize_platform() {
-    if [ "$USER" == "" ]; then
+    if [ "$HOME" == "/root" ]; then
+        # This a vagrant VM
+        export HOME="/home/vagrant"
+    elif [ "$USER" == "" ]; then
         # This a docker container
         export HOME="/root"
         export USER=$(whoami)
     fi
 
     #NOTE That is not default name when cloning
-    export dotfiles_dir="$HOME/.dotfiles"
-    #export LOGS="$dotfiles_dir/dotfiles.log"
-    export LOGS="/tmp/dotfiles.log"
+    export LOGS="/tmp/quantlab.log"
 }
 
 
@@ -99,17 +126,19 @@ function install_dependencies() {
 
     if [[ $packages != "" ]]; then
         log "Installing packages $packages"
-        sudo apt-get install $packages
-        log "[Git configuration] Type your email adress, followed by enter: "
-        read user_email
-        git config --global user.email $user_email
-        log "[Git configuration] Type your user name, followed by enter: "
-        read user_name
-        git config --global user.name $user_name
+        apt-get -y update 2>&1 >> "$LOGS"
+        apt-get install -y $packages 2>&1 >> "$LOGS"
+        #FIXME Do we have to do it here ? It breaks automation
+        #log "[Git configuration] Type your email adress, followed by enter: "
+        #read user_email
+        #git config --global user.email $user_email
+        #log "[Git configuration] Type your user name, followed by enter: "
+        #read user_name
+        #git config --global user.name $user_name
     fi
 
     #pip install -r $LAB_PATH/requirements.txt
-    pip install -r requirements.txt
+    pip install -r requirements.txt 2>&1 >> "$LOGS"
 }
 
 

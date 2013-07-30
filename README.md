@@ -17,7 +17,7 @@ Install
 
 ```
 $ git clone https://github.com/Gusabi/quantlab.git
-$ cd quantalb && ./boostrap.sh -e YOUR_DOKKU_SERVER
+$ cd quantalb && sudo ./boostrap.sh -d YOUR_DOKKU_SERVER
 ```
 
 Or

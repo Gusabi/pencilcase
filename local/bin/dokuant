@@ -38,22 +38,22 @@ function display_help() {
     usage
     echo
 
-    echo "Available commands:"
-    echo "-\tdokuant create-user\t\tUpload on the server an ssh key"
-    echo "-\tdokuant create-app\t\tMake your app ready to deploy"
-    echo "-\tdokuant [--attach] deploy\tPush your application to the server.\n\t\t\t\t\t\tIf attach is specified, it will catch logs, right after."
-    echo "-\tdokuant connect\t\t\tUse ssh to connect to your container"
-    echo "-\tdokuant show <apps|images>\timages: Show available images you can build your application on\n\t\t\t\t\t\tapps:\tShow your running apps"
-    echo "-\tdokuant help\t\t\tDisplay this message"
+    log "Available commands:"
+    log "-\tdokuant create-user\t\tUpload on the server an ssh key"
+    log "-\tdokuant create-app\t\tMake your app ready to deploy"
+    log "-\tdokuant [--attach] deploy\tPush your application to the server.\n\t\t\t\t\t\tIf attach is specified, it will catch logs, right after."
+    log "-\tdokuant connect\t\t\tUse ssh to connect to your container"
+    log "-\tdokuant show <apps|images>\timages: Show available images you can build your application on\n\t\t\t\t\t\tapps:\tShow your running apps"
+    log "-\tdokuant help\t\t\tDisplay this message"
     echo
-    echo "Application relative commands: dokuant app <sub-command>"
-    echo "-\tdokuant app <sub-command>"
-    echo "-\t\tapp start|stop|kill|remove"
-    echo "-\t\tapp infos\t\tGet application configuration"
-    echo "-\t\tapp commit name\t\tSave the state of the container under 'name'"
-    echo "-\t\tapp push\t\tRegister the image on docker index"
-    echo "-\t\tapp attach\t\tBlock waiting for logs and display them"
-    echo "-\t\tapp logs\t\tDisplay application logs"
+    log "Application relative commands: dokuant app <sub-command>"
+    log "-\tdokuant app <sub-command>"
+    log "-\t\tapp start|stop|kill|remove"
+    log "-\t\tapp infos\t\tGet application configuration"
+    log "-\t\tapp commit name\t\tSave the state of the container under 'name'"
+    log "-\t\tapp push\t\tRegister the image on docker index"
+    log "-\t\tapp attach\t\tBlock waiting for logs and display them"
+    log "-\t\tapp logs\t\tDisplay application logs"
 }
 
 

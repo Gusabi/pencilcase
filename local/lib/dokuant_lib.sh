@@ -47,11 +47,8 @@ function render_template_files() {
 
 
 function create_dokku_user() {
-    if [ ! -f id_rsa.pub ]; then
-        log "No public key found, creating a new one:"
-        ssh-keygen
-    fi
-    #NOTE root password needed
+    #TODO generate id_rsa.pub
+    #FIXME root password needed !!
     log "Creating $1 account"
     cat ~/.ssh/id_rsa.pub | ssh root@$server_ip "gitreceive upload-key $1"
 }
