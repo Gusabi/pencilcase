@@ -34,26 +34,27 @@ function usage() {
 }
 
 
+#FIXME in vagrant env, echo don't understand \t
 function display_help() {
     usage
     echo
 
-    echo "Available commands:"
-    echo "-\tdokuant create-user\t\tUpload on the server an ssh key"
-    echo "-\tdokuant create-app\t\tMake your app ready to deploy"
-    echo "-\tdokuant [--attach] deploy\tPush your application to the server.\n\t\t\t\t\t\tIf attach is specified, it will catch logs, right after."
-    echo "-\tdokuant connect\t\t\tUse ssh to connect to your container"
-    echo "-\tdokuant show <apps|images>\timages: Show available images you can build your application on\n\t\t\t\t\t\tapps:\tShow your running apps"
-    echo "-\tdokuant help\t\t\tDisplay this message"
+    echo -e "Available commands:"
+    echo -e "-\tdokuant create-user\t\tUpload on the server an ssh key"
+    echo -e "-\tdokuant create-app\t\tMake your app ready to deploy"
+    echo -e "-\tdokuant [--attach] deploy\tPush your application to the server.\n\t\t\t\t\t\tIf attach is specified, it will catch logs, right after."
+    echo -e "-\tdokuant connect\t\t\tUse ssh to connect to your container"
+    echo -e "-\tdokuant show <apps|images>\timages: Show available images you can build your application on\n\t\t\t\t\t\tapps:\tShow your running apps"
+    echo -e "-\tdokuant help\t\t\tDisplay this message"
     echo
-    echo "Application relative commands: dokuant app <sub-command>"
-    echo "-\tdokuant app <sub-command>"
-    echo "-\t\tapp start|stop|kill|remove"
-    echo "-\t\tapp infos\t\tGet application configuration"
-    echo "-\t\tapp commit name\t\tSave the state of the container under 'name'"
-    echo "-\t\tapp push\t\tRegister the image on docker index"
-    echo "-\t\tapp attach\t\tBlock waiting for logs and display them"
-    echo "-\t\tapp logs\t\tDisplay application logs"
+    echo -e "Application relative commands: dokuant app <sub-command>"
+    echo -e "-\tdokuant app <sub-command>"
+    echo -e "-\t\tapp start|stop|kill|remove"
+    echo -e "-\t\tapp infos\t\tGet application configuration"
+    echo -e "-\t\tapp commit name\t\tSave the state of the container under 'name'"
+    echo -e "-\t\tapp push\t\tRegister the image on docker index"
+    echo -e "-\t\tapp attach\t\tBlock waiting for logs and display them"
+    echo -e "-\t\tapp logs\t\tDisplay application logs"
 }
 
 
