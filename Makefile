@@ -13,8 +13,6 @@ GIT_USER?=robot
 GIT_EMAIL?=robot@example.com
 
 all: dependencies install
-	echo "[bootsrap] Loading changes"
-	source $HOME/.${shell}rc
 
 install:
 	#TODO Copy in /usr/local/{bin|lib}, but what about templates ? /opt ?
