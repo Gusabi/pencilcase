@@ -42,9 +42,9 @@ function display_help() {
     echo -e "Available commands:"
     echo -e "-\tdokuant create-user\t\tUpload on the server an ssh key"
     echo -e "-\tdokuant create-app\t\tMake your app ready to deploy"
-    echo -e "-\tdokuant [--attach] deploy\tPush your application to the server.\n\t\t\t\t\t\tIf attach is specified, it will catch logs, right after."
+    echo -e "-\tdokuant [--attach] deploy\tPush your application to the server.\n\t\t\t\t\tIf attach is specified, it will catch logs, right after."
     echo -e "-\tdokuant connect\t\t\tUse ssh to connect to your container"
-    echo -e "-\tdokuant show <apps|images>\timages: Show available images you can build your application on\n\t\t\t\t\t\tapps:\tShow your running apps"
+    echo -e "-\tdokuant show <apps|images>\timages: Show available images you can build your application on\n\t\t\t\t\tapps:\tShow your running apps"
     echo -e "-\tdokuant help\t\t\tDisplay this message"
     echo
     echo -e "Application relative commands: dokuant app <sub-command>"

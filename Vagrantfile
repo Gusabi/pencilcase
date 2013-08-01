@@ -14,5 +14,5 @@ Vagrant.configure("2") do |config|
     lxc.customize 'cgroup.memory.limit_in_bytes', '1024M'
   end
 
-  config.vm.provision :shell, :inline => "cd /home/vagrant/quantlab && ./bootstrap.sh"
+  config.vm.provision :shell, :inline => "export PROJECT_URL=Gusabi/quantlab && wget -qO- https://raw.github.com/Gusabi/Dotfiles/master/utils/git-bootstrap.sh | bash"
 end

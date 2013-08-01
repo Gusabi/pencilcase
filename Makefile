@@ -4,7 +4,7 @@
 #
 # vim:ft=make
 
-LOGS=/tmp/quantrade.logs
+LOGS?=/tmp/make.logs
 shell?=bash
 SHELL_CONFIG_FILE=${HOME}/.${shell}rc
 SERVERDEV_IP?=192.168.0.17
@@ -13,6 +13,8 @@ GIT_USER?=robot
 GIT_EMAIL?=robot@example.com
 
 all: dependencies install
+	echo "[bootsrap] Loading changes"
+	source $HOME/.${shell}rc
 
 install:
 	#TODO Copy in /usr/local/{bin|lib}, but what about templates ? /opt ?
@@ -42,7 +44,7 @@ dependencies:
 	@echo "[make] Installing packages"
 	apt-get -y --force-yes install git python-pip 2>&1 >> ${LOGS}
 	@echo "[make] Pip installing python modules"
-	pip install --use-mirrors -U -r requirements.txt 2>&1 >> ${LOGS}
+	pip install --upgrade -r requirements.txt 2>&1 >> ${LOGS}
 	@echo "[make] Configuring git"
 	git config --global user.name ${GIT_USER}
 	git config --global user.email ${GIT_EMAIL}
