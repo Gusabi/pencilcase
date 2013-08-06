@@ -16,48 +16,37 @@
 # limitations under the License.
 
 
+# Docker server informations
 server_ip=${SERVERDEPLOY_IP:-192.168.0.17}
 server_port=${SERVERDEPLOY_PORT:-4242}
 
 
+# Most of the commands assume project name == root directory name
 function get_project_name() {
     pwd | awk -F"/" '{print $NF}'
 }
 
 
-function render_template_files() {
-    log "Setting up quant environment"
-    if [ $1 ]; then
-        arguments+=" --strategie $1"
-    fi
-    if [ $2 ]; then
-        arguments+=" --manager $2"
-    fi
-    if [ $3 ]; then
-        arguments+=" --source $3"
-    fi
-    if [ $4 ]; then
-        arguments+=" --author $4"
-    fi
-    log "Generating project files from templates"
-    echo $arguments
-    generate_quant_env.py $arguments
-    success "Done"
-}
-
-
+# Git push use ssh key identification
 function create_dokku_user() {
+    username=$1
+
     if [ ! -f id_rsa.pub ]; then
         log "No public key found, creating a new one:"
         ssh-keygen
     fi
-    #NOTE root password needed
-    log "Creating $1 account"
+
+    # Server root password required
+    log "Creating $username account"
+
+    # Uploading key to the server
     cat ~/.ssh/id_rsa.pub | ssh root@$server_ip "gitreceive upload-key $1"
 }
 
 
 function create_dokku_app() {
+    username=$1
+    project=$2
     #NOTE Python by heroku: https://devcenter.heroku.com/articles/python
     log "Initializing Dokku application"
 
@@ -82,12 +71,14 @@ function create_dokku_app() {
     fi
 
     #TODO Automatic creation when first deployment ?
-    log "Creating application $2 on $1 account"
-    git remote add $2 git@$server_ip:$2
+    log "Creating application $projet on $username account"
+    git remote add $project git@$server_ip:$project
 
-    log "Now create at least a Procfile (for help, visit http://blog.daviddollar.org/2011/05/06/introducing-foreman.html)"
+    test -f Procfile || log "Now create at least a Procfile (for help, visit http://blog.daviddollar.org/2011/05/06/introducing-foreman.html)"
     if is_python; then
         log "Then pip install your dependencies"
+    elif is_node; then
+        log "Then npm install your dependencies and write them in a package.json"
     elif is_ruby; then
         log "Then gem install your dependencies"
     fi
@@ -97,28 +88,28 @@ function create_dokku_app() {
 function deploy_dokku_app() {
     project=$1
     commit_comment=$2
+
+    # Automatic dependencies detection, assuming a correct use of the virtualenv and pip
     if is_python; then
         if [[ $VIRTUAL_ENV == "" ]]; then
             log "Activating virtualenv for dependencies detection"
             source ./venv/bin/activate
         fi
-        #FIXME Since unexpected github dependecies appear, disable for now automatic save
-        #log "Storing app dependencies"
-        #pip freeze > requirements.txt
+        log "Storing app dependencies"
+        pip freeze > requirements.txt
     fi
 
+    # Updating git if necessary
     if [[ $(git status | grep "nothing to commit") == "" ]]; then
         log "Committing changes ($commit_comment)"
         git add -A
         git commit -m "$commit_comment"
-
-        log "Deploying to server application $project"
-        git push $project master
     else 
         success "Nothing to commit, working directory clean" 
     fi
 
-    #TODO Use python script to fech and store informations
+    log "Deploying to server application $project"
+    git push $project master
     #TODO Attach
 }
 
@@ -157,8 +148,7 @@ function ssh_container() {
     ssh_port=$(python -c "from docker_client import DockerClient; print DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').forwarded_ssh()")
 
     if [ $ssh_port ]; then
-        log "Asking server for SSH Port... $ssh_port"
-        log "Connecting to the box"
+        log "Got SSH Port: $ssh_port, connecting..."
         ssh root@$server_ip -p $ssh_port
     fi
 }

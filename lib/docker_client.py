@@ -9,8 +9,10 @@
 
 #From https://github.com/dotcloud/docker-py
 #TODO Automate:  sudo docker -H 192.168.0.17:4242 -H 127.0.0.1:4243 -d &
+#NOTE No way to get output ? If start fails for example
 
 
+import requests
 import docker
 import json
 #TODO Default without output, arg to turn it on
@@ -160,8 +162,14 @@ class DockerClient(object):
         #TODO Implement a test to check if it worked
         self._client = docker.Client(
             base_url='http://{}:{}'.format(host, port), version=version)
-        self.properties = self._client.info()
-        self.properties.update(self._client.version())
+        try:
+            self.properties = self._client.info()
+            self.properties.update(self._client.version())
+        except requests.exceptions.ConnectionError as e:
+            puts(colored.red('** Error connection to server:\n\t{}'.format(
+                e.message)))
+            import sys
+            sys.exit(1)
 
     def inspect(self):
         pprint(self.properties)

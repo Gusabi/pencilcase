@@ -72,3 +72,6 @@ authtoken.p
 management/
 
 plugins.json
+
+.vagrant
+.env
