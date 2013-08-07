@@ -94,5 +94,6 @@ source utils.sh
 
 render_template_files $STRATEGIE $MANAGER $SOURCE $AUTHOR
 log "Copying default configuration file"
+#NOTE May need as well a default.json
 cp $HOME/local/templates/plugins.tpl plugins.json
 success "Done"

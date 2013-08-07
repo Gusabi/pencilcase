@@ -46,6 +46,10 @@ function display_help() {
     echo -e "\tdokuant show <apps|images>\timages: Show available images you can build your application on\n\t\t\t\t\tapps:\tShow your running apps"
     echo -e "\tdokuant help\t\t\tDisplay this message"
     echo
+    echo -e "Configuration management:"
+    echo -e "\tdokuant set <key> <value>
+    echo -e "\tdokuant get <key>
+    echo
     echo -e "Application relative commands: dokuant app <sub-command>"
     echo -e "\tdokuant app <sub-command>"
     echo -e "\t\tapp start|stop|kill|remove"
@@ -66,14 +70,12 @@ case "$1" in
     create-user)
         create_dokku_user $USER
         success "Done"
-    
     ;;
   
     create-app)
         #FIXME If directory clean, stop after initiating git
         create_dokku_app $USER $PROJECT
         success "Done"
-  
     ;;
   
     deploy)
@@ -85,7 +87,33 @@ case "$1" in
         fi
         deploy_dokku_app $PROJECT $commit_comment
         #NOTE Should be able to attach ?
+    ;;
 
+    set)
+        # Only image parameter is useful to set for now
+        key=$2
+        value=$3
+        test -n $key || die "Provide a key to set"
+        test -n $value || die "Provide a value to set"
+
+        log "Setting config key "$key" to "$value" (namespace $PROJECT)"
+        feedback=$(redis-cli -h $server_ip hset $PROJECT $key $value)
+        test $feedback || die "Request failed"
+        success "Got: $feedback"
+    ;;
+
+    get)
+        test -n $2 || die "Provide a key to fetch"
+
+        log "Requesting value of $2 (namespace $PROJECT)"
+        if [ "$2" == "all" ]; then
+            result=$(redis-cli -h $server_ip hgetall $PROJECT)
+            #TODO Check
+        else
+            result=$(redis-cli -h $server_ip hget $PROJECT $2)
+            test $result || die "Request failed"
+        fi
+        success "$2 = $result"
     ;;
 
     app)
@@ -149,7 +177,6 @@ case "$1" in
         #interpreter=$2
         #TODO Right now ssh is the only working interpreter
         repl_container $CONTAINER "ssh"
-
     ;;
 
     show)
@@ -161,12 +188,10 @@ case "$1" in
         else
             die "Unknown object: $2"
         fi
-
     ;;
 
     help)
         display_help
-
     ;;
 
     *)
