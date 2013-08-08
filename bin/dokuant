@@ -38,7 +38,7 @@ function display_help() {
     usage
     echo
 
-    echo -e "Available commands:"
+    echo -e "General commands:"
     echo -e "\tdokuant create-user\t\tUpload on the server an ssh key"
     echo -e "\tdokuant create-app\t\tMake your app ready to deploy"
     echo -e "\tdokuant [--attach] deploy\tPush your application to the server.\n\t\t\t\t\tIf attach is specified, it will catch logs, right after."
@@ -47,8 +47,8 @@ function display_help() {
     echo -e "\tdokuant help\t\t\tDisplay this message"
     echo
     echo -e "Configuration management:"
-    echo -e "\tdokuant set <key> <value>
-    echo -e "\tdokuant get <key>
+    echo -e "\tdokuant set <key> <value>"
+    echo -e "\tdokuant get <key>"
     echo
     echo -e "Application relative commands: dokuant app <sub-command>"
     echo -e "\tdokuant app <sub-command>"
@@ -116,6 +116,7 @@ case "$1" in
         success "$2 = $result"
     ;;
 
+    #NOTE Could it b replaced by $PROJECT to run those commands from eveywhere
     app)
         case "$2" in
             #TODO execute
@@ -142,12 +143,15 @@ case "$1" in
                 python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').inspect()"
             ;;
             commit)
-                #FIXME I'm pretty sure it does not work
                 #TODO If no $3, make it current time
-                #TODO Understand the whole concept of repository
                 tag=$3
-                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').commit(tag='$tag', author='$USER')"
-                success "Application committed to app/$PROJECT:$tag"
+                if [ $# -eq 4 ]; then
+                    image_name=$4
+                else
+                    image_name=$PROJECT
+                fi
+                python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').commit(repository='app/$image_name', tag='$tag', author='$USER')"
+                success "Application committed to app/$image_name:$tag"
             ;;
             push)
                 die "Not available yet"
@@ -169,7 +173,7 @@ case "$1" in
     ;;
 
     connect)
-        if [ -n "$2" ]; then
+        if [ $# -eq 2 ]; then
             CONTAINER=$2
         else
             CONTAINER=$PROJECT

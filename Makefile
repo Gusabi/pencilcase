@@ -5,10 +5,10 @@
 # vim:ft=make
 
 LOGS?=/tmp/make.logs
-shell?=bash
-SHELL_CONFIG_FILE=${HOME}/.${shell}rc
+USER_SHELL?=zsh
+SHELL_CONFIG_FILE=${HOME}/.${USER_SHELL}rc
 SERVERDEV_IP?=192.168.0.17
-SERVERDEV_PORT?=4242
+SERVERDEV_PORT?=4243
 
 all: dependencies install
 
@@ -35,9 +35,10 @@ install:
 dependencies:
 	@echo "[make] Updating cache..."
 	apt-get update 2>&1 >> ${LOGS}
-	@echo "[make] Installing packages"
-	apt-get -y --force-yes install git python-pip 2>&1 >> ${LOGS}
+	@echo "[make] Installing packages: git, pip and redis-server"
+	apt-get -y --force-yes install git python-pip redis-server 2>&1 >> ${LOGS}
 	@echo "[make] Pip installing python modules"
+	pip install --upgrade distribute 2>&1 >> ${LOGS}
 	pip install --upgrade -r requirements.txt 2>&1 >> ${LOGS}
 
 mysql:

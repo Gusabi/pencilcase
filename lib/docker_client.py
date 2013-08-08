@@ -9,6 +9,7 @@
 
 #From https://github.com/dotcloud/docker-py
 #TODO Automate:  sudo docker -H 192.168.0.17:4242 -H 127.0.0.1:4243 -d &
+#TODO Automate:  sudo docker -H 0.0.0.0:4243 -d &
 #NOTE No way to get output ? If start fails for example
 
 
@@ -72,10 +73,10 @@ class Image(object):
 
 class Container(object):
 
-    def __init__(self, client, name):
+    def __init__(self, client, name, is_running=False):
         #TODO A cool way to display self.properties
-        #NOTE name= app/docker_env:latest = namespace/name:tag ?
         self._client = client
+        self.running = is_running
         self.id = self._get_id(name)
         self.properties = self._client.inspect_container(self.id)
 
@@ -87,9 +88,9 @@ class Container(object):
                 os.environ['SERVERDEV_PORT'],
                 self.id))
 
-    def _get_id(self, name, is_running=False):
+    def _get_id(self, name):
         #TODO Dates stuff, for now return the latest
-        containers = self._client.containers(all=(not is_running))
+        containers = self._client.containers(all=(not self.running))
         candidates = filter(lambda box: box['Image'] == name, containers)
 
         if not candidates:
@@ -215,8 +216,48 @@ class DockerClient(object):
         container = self.container(':'.join([image_name, tag]))
         container.start(attach=kwargs.get('attach', False))
 
-    def container(self, name):
-        return Container(self._client, name)
+    def container(self, name, is_running=False):
+        return Container(self._client, name, is_running)
 
     def image(self, base, tag=None):
         return Image(self._client, base, tag=tag)
+
+    def run(self, image, cmd, **kwargs):
+        winner_id = None
+        containers = self._client.containers(all=True)
+        #NOTE What about quotes with /bin/bash -c "cmd"
+        candidates = filter(lambda box:
+            (box['Image'] == image)
+            and (box['Command'] == cmd),
+            #and (box['Command'].replace('/bin/bash -c ', '') == cmd),
+            containers)
+
+        if candidates:
+            puts(colored.blue('[ .. ] Suitable containers exist...'))
+            # Already running ?
+            stopped_boxes = filter(lambda box: box['Status'].find('Exit') == 0, candidates)
+
+            # If yes, nothing to do
+            # If no, let's start the latest
+            if stopped_boxes:
+                puts(colored.blue('[ .. ] but are stopped, restarting the latest'))
+                winner_id = sorted(
+                    stopped_boxes, key=lambda box: box['Created'])[-1]['Id']
+                self._client.start(winner_id)
+            else:
+                puts(colored.blue('[ .. ] and are running, nothing to do'))
+
+        else:
+            puts(colored.blue('[ .. ] Found nothing, creates it from image {}'.format(image)))
+            #TODO Check if the image exists
+            self._client.create_container(image, cmd, **kwargs)
+            winner_id = sorted(
+                self._client.containers(all=True),
+                key=lambda box: box['Created'])[-1]['Id']
+            puts(colored.blue('[ .. ] Starting container with {}'.format(cmd)))
+            self._client.start(winner_id)
+
+        if winner_id:
+            return self.container(image)
+
+        return None

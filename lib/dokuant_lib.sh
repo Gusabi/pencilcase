@@ -17,8 +17,8 @@
 
 
 # Docker server informations
-server_ip=${SERVERDEPLOY_IP:-192.168.0.17}
-server_port=${SERVERDEPLOY_PORT:-4242}
+server_ip=${SERVERDEV_IP:-192.168.0.17}
+server_port=${SERVERDEV_PORT:-4243}
 
 
 # Most of the commands assume project name == root directory name
@@ -56,8 +56,10 @@ function create_dokku_app() {
         git init
     fi
     #FIXME If nothing to do, will stop. rm .git above ?
+    set +e
     git add -A
     git commit -m "Initial commit"
+    set -e
 
     if is_python; then
         log "Python app detected"
@@ -65,6 +67,7 @@ function create_dokku_app() {
         virtualenv venv --distribute --no-site-packages
         #FIXME Activates nothing
         source ./venv/bin/activate
+        log "Updating .gitignore file"
         echo "venv" >> .gitignore
         echo "*.pyc" >> .gitignore
         #NOTE Parse *.py files and pip install them ? then pip freeze, etc...
@@ -89,6 +92,7 @@ function deploy_dokku_app() {
     project=$1
     commit_comment=$2
 
+    set +e
     # Automatic dependencies detection, assuming a correct use of the virtualenv and pip
     if is_python; then
         if [[ $VIRTUAL_ENV == "" ]]; then
@@ -99,6 +103,7 @@ function deploy_dokku_app() {
         pip freeze > requirements.txt
     fi
 
+    #FIXME Still stop the execution
     # Updating git if necessary
     if [[ $(git status | grep "nothing to commit") == "" ]]; then
         log "Committing changes ($commit_comment)"
@@ -107,8 +112,10 @@ function deploy_dokku_app() {
     else 
         success "Nothing to commit, working directory clean" 
     fi
+    set -e
 
     log "Deploying to server application $project"
+    #NOTE master branch is hard-coded, what to do with that
     git push $project master
     #TODO Attach
 }
@@ -141,11 +148,30 @@ function repl_container() {
 }
 
 
+function run() {
+    container=$1
+    start_command=$2
+    if [ -n "$3" ]; then
+        ports=$3
+        log "Exposing port(s): $ports"
+    else
+        ports="['']"
+    fi
+    log "Running $start_command in $container"
+    python -c "from docker_client import DockerClient; DockerClient(host='$server_ip', port=$server_port).run('app/$container_name:latest', '$start_command', ports=$ports)"
+}
+
+
 function ssh_container() {
     #TODO Save ssh key to avoid password stuff
-    project=$1
+    container_name=$1
 
-    ssh_port=$(python -c "from docker_client import DockerClient; print DockerClient(host='$server_ip', port=$server_port).container('app/$PROJECT:latest').forwarded_ssh()")
+    # Will run the required container with ssh if not ready
+    #TODO Control mapped ssh_port; ['$ssh_port:22']
+    run $container_name "/usr/bin/sshd -D" "['22']"
+
+    ssh_port=$(python -c "from docker_client import DockerClient; print DockerClient(host='$server_ip', port=$server_port).container('app/$container_name:latest').forwarded_ssh()")
+    sleep 1
 
     if [ $ssh_port ]; then
         log "Got SSH Port: $ssh_port, connecting..."
