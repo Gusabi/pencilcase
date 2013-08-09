@@ -64,11 +64,8 @@ function create_dokku_app() {
     if is_python; then
         log "Python app detected"
         log "Creating virtual environment"
-        virtualenv venv --distribute --no-site-packages
         #FIXME Activates nothing
-        source ./venv/bin/activate
         log "Updating .gitignore file"
-        echo "venv" >> .gitignore
         echo "*.pyc" >> .gitignore
         #NOTE Parse *.py files and pip install them ? then pip freeze, etc...
     fi
@@ -93,15 +90,6 @@ function deploy_dokku_app() {
     commit_comment=$2
 
     set +e
-    # Automatic dependencies detection, assuming a correct use of the virtualenv and pip
-    if is_python; then
-        if [[ $VIRTUAL_ENV == "" ]]; then
-            log "Activating virtualenv for dependencies detection"
-            source ./venv/bin/activate
-        fi
-        log "Storing app dependencies"
-        pip freeze > requirements.txt
-    fi
 
     #FIXME Still stop the execution
     # Updating git if necessary
