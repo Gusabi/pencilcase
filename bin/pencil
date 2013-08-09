@@ -1,0 +1,227 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+#
+# Copyright © 2013 xavier <xavier@laptop-300E5A>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+'''pencil.
+
+Usage:
+    pencil --version
+    pencil -h | --help
+    pencil create (user | app)
+    pencil deploy [--attach] [--comment=<message>]
+    pencil set <key> <value> [--app=<name>]
+    pencil get <key> [--app=<name>]
+    pencil (connect | log | attach | start | stop | kill | remove) [--app=<app>] [--tag=<tag>]
+    pencil commit [--newname=<name>] [--newtag=<newtag>] [--app=<app>] [--tag=<tag>]
+
+Options:
+    --version               Show version.
+    -h --help               Show this screen.
+    --app <app>             Run the command against the app named <app>.
+    --attach                After deployement, will cath app logs.
+    --name <name>           Provide image name for commit.
+    --tag <tag>             Provide tag for commit [default: latest].
+    --comment <comment>     Git commit message [default: Automatic-commit].
+'''
+
+
+#TODO Git stuff from bash to here
+
+
+from docopt import docopt
+import os
+from clint.textui import puts, colored
+from docker_client import DockerClient
+import redis
+import sys
+import time
+
+
+def log(message):
+    puts('[ ' + colored.blue('..') + ' ] ' + message)
+
+
+def success(message):
+    puts('[ ' + colored.green('OK') + ' ] ' + message)
+
+
+def fail(message):
+    puts('[' + colored.red('FAIL') + '] ' + message)
+
+
+def parse_commandline():
+    args = docopt(__doc__, version='Dokku client v0.2')
+    # We need user name for project syntax: user/project:tag
+    args['username'] = os.getlogin()
+
+    args['server_ip'] = os.environ['SERVERDEV_IP']
+    args['docker_port'] = os.environ['SERVERDEV_PORT']
+    args['redis_port'] = 6379
+
+    if args['--app'] is None:
+        # If app name was not provided, assuming directory name is the app name
+        # This is much more plausible if there is a git repository
+        #assert os.path.exists('.git')
+        args['--app'] = os.path.split(os.getcwd())[-1]
+
+    if args['--name'] is None:
+        # Default commit value.
+        # Without args, commit command just saves current container
+        args['--name'] = args['--app']
+
+    #NOTE tag et comment should have default values
+
+    return args
+
+
+#'username': os.environ['USER'],
+#'cwd': os.path.split(os.getcwd())[-1]
+if __name__ == '__main__':
+    args = parse_commandline()
+
+    #NOTE latest hard coded but how could it be different ?
+    docker_client = DockerClient(
+        host=args['server_ip'], port=args['docker_port'])
+
+    #NOTE db keyworld ?
+    redis_client = redis.StrictRedis(
+        host=args['server_ip'], port=args['redis_port'], db=0)
+    try:
+        redis_client.echo('ping')
+        success('Connected to configuration server.')
+    except redis.ConnectionError:
+        sys.exit(1)
+
+    if args['create']:
+        if args['user']:
+            log('Registering {} account'.format(args['username']))
+            result = redis_client.hset(args['--app'],
+                                       'username',
+                                       args['username'])
+            success('Got: {}'.format(result))
+
+            os.system('dokuant create-user {}'.format(
+                args['username']))
+            success('Done')
+
+        if args['app']:
+            log('Initializing dokku application...')
+            os.system('dokuant create-app {} {}'.format(
+                args['username'], args['--app']))
+            success('Done')
+
+    elif args['deploy']:
+        os.system('dokuant deploy {} {}'.format(
+            args['--app'], args['--comment']))
+        if args['--attach']:
+            try:
+                container = docker_client.container(
+                    '{}/{}:latest'.format(args['username'], args['--app']))
+                container.attach()
+            except ValueError, e:
+                fail(e.message)
+
+    elif args['get']:
+        if args['<key>'] == 'images':
+            docker_client.list_images()
+        elif args['<key>'] == 'apps':
+            docker_client.list_containers()
+        #NOTE Kind of a conflic with get config
+        elif args['<key>'] == 'status':
+            try:
+                container = docker_client.container(
+                    '{}/{}:latest'.format(args['username'], args['--app']))
+                container.inspect()
+            except ValueError, e:
+                fail(e.message)
+        else:
+            log('Requesting value of {} (namespace {})'.format(
+                args['<key>'], args['--app']))
+            if args['<key>'] == 'config':
+                result = redis_client.hgetall(args['--app'])
+            else:
+                result = redis_client.hget(
+                    args['--app'], args['<key>'])
+
+            success('{} = {}'.format(args['<key>'], result))
+
+    elif args['set']:
+        log('Setting config key "{}" to "{}" (namespace {})'.format(
+            args['<key>'], args['<value>'], args['--app']))
+        feedback = redis_client.hset(
+            args['--app'], args['<key>'], args['<value>'])
+        success('Got: {}'.format(feedback))
+
+    elif args['connect']:
+        # This command will, if needed, run or restart
+        # an ssh-ready requested image
+        mapped_ssh_port = redis_client.decr('default_ssh_port')
+        log('Mapping ssh port to {}'.format(mapped_ssh_port))
+        docker_client.run('{}/{}:{}'.format(args['username'], args['--app'], args['--tag']),
+                          '/usr/sbin/sshd -D',
+                          ports=['{}:22'.format(mapped_ssh_port)])
+        #NOTE Should be removed at the next test
+        #ssh_port = docker_client.container('{}/{}:{}'.format(args['username'], args['--app'], args['--tag'])).forwarded_ssh()
+        time.sleep(1)  # Wait for the container to boot I guess
+
+        #TODO Something much more reliable
+        os.system('ssh root@{} -p {}'.format(
+            args['server_ip'], mapped_ssh_port))
+
+    # Here we go for docker stuff
+    else:
+        try:
+            container = docker_client.container(
+                '{}/{}:{}'.format(args['username'], args['--app'], args['--tag']))
+        except ValueError, e:
+            fail(e.message)
+            sys.exit(1)
+        #TODO execute
+        #TODO push
+        #TODO restart, does not work for now
+        if args['start']:
+            container.start(attach=args['--attach'])
+            success('Application started.')
+
+        elif args['kill']:
+            container.kill()
+            success('Application killed.')
+
+        elif args['stop']:
+            container.stop()
+            success('Application stopped.')
+
+        elif args['remove']:
+            container.remove()
+            success('Application destroyed.')
+
+        elif args['attach']:
+            container.attach()
+
+        elif args['log']:
+            container.logs(display=True)
+
+        elif args['commit']:
+            if args['--newtag'] is None:
+                args['--newtag'] = args['--tag']
+
+            container.commit(repository='{}/{}'.format(args['username'], args['--newname']),
+                             tag=args['--newtag'],
+                             author=args['username'])
+            success('Application committed to {}/{}:{}'.format(
+                args['username'], args['--newname'], args['--newtag']))

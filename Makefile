@@ -11,26 +11,17 @@ SERVERDEV_IP?=192.168.0.17
 SERVERDEV_PORT?=4243
 
 all: dependencies install
+	@echo "Done"
 
 install:
-	#TODO Copy in /usr/local/{bin|lib}, /opt ?
-	@echo "[make] Creating local/* directories"
-	test -d ${HOME}/local/bin || mkdir -p ${HOME}/local/bin
-	test -d ${HOME}/local/lib || mkdir -p ${HOME}/local/lib
-
 	@echo "[make] Copying files"
-	cp bin/* ${HOME}/local/bin
-	cp lib/* ${HOME}/local/lib
-
-	@echo "[make] Managing ACL"
-	chown -R ${USER} ${HOME}/local
-	chmod +x ${HOME}/local/bin/*
+	cp bin/* /usr/local/bin
+	cp lib/* /usr/local/lib
 
 	@echo "[make] Updating ${SHELL_CONFIG_FILE}"
-	echo "export PATH=${PATH}:${HOME}/local/bin:${HOME}/local/lib" >> ${SHELL_CONFIG_FILE}
 	echo "export SERVERDEV_IP=${SERVERDEV_IP}" >> ${SHELL_CONFIG_FILE}
 	echo "export SERVERDEV_PORT=${SERVERDEV_PORT}" >> ${SHELL_CONFIG_FILE}
-	echo "export PYTHONPATH=${PYTHONPATH}:${HOME}/local/lib" >> ${SHELL_CONFIG_FILE}
+	echo "export PYTHONPATH=${PYTHONPATH}:/usr/local/lib" >> ${SHELL_CONFIG_FILE}
 
 dependencies:
 	@echo "[make] Updating cache..."
@@ -40,15 +31,3 @@ dependencies:
 	@echo "[make] Pip installing python modules"
 	pip install --upgrade distribute 2>&1 >> ${LOGS}
 	pip install --upgrade -r requirements.txt 2>&1 >> ${LOGS}
-
-mysql:
-	@echo "Not yet"
-
-team_dashboard:
-	@echo "Not yet"
-
-node:
-	@echo "Not yet"
-
-R-3.0:
-	@echo "Not yet"
