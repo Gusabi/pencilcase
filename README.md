@@ -18,12 +18,12 @@ Install
 - With Vagrant (http://www.vagrantup.com/).
 
 ```
-$ git clone https://github.com/Gusabi/quantlab.git
+$ git clone https://github.com/Gusabi/pencilcase.git
 
 $ sudo apt-get install lxc redir
 $ sudo apt-get update && apt-get dist-upgrade
 $ vagrant plugin install vagrant-lxc
-$ cd quantlab && vagrant up --provder=lxc
+$ cd pencilcase && vagrant up --provder=lxc
 ```
 
 You can use an other provider but edit eventually the Vagrantfile for fine
@@ -35,20 +35,20 @@ optionnaly BOX_URI if you don't have it already on your system)
 ```
 $ export SERVERDEV_IP=your.dokku.server
 $ export SERVERDEV_PORT=7777
-$ export LOGS=/tmp/quantlab.log
+$ export LOGS=/tmp/pencilcase.log
 ```
 
 And then simply run:
 
 ```
-$ git clone https://github.com/Gusabi/quantlab.git
-$ cd quantlab && sudo -E make all
+$ git clone https://github.com/Gusabi/pencilcase.git
+$ cd pencilcase && sudo -E make all
 ```
 
 - Or one liner style (with more installation options):
 
 ```
-$ export PROJECT_URL=Gusabi/quantlab
+$ export PROJECT_URL=Gusabi/pencilcase
 $ export INSTALL_PATH=/some/where
 $ export MAKE_TARGET=all
 $ export VIRTUALIZE=true
@@ -64,7 +64,8 @@ $ wget -qO- https://raw.github.com/Gusabi/Dotfiles/master/bin/apt-git | sudo -E 
 You're done, check the installation with:
 
 ```
-$ dokuant help
+$ pencil --version
+$ pencil --help
 ```
 
 Getting Started
@@ -77,24 +78,24 @@ If you want to use docker client, you also need to make docker listen on your LA
 or public IP. On your server, kill docker daemon process and run:
 
 ```
-dokku-server $ sudo docker -H 192.168.0.17:4242 -H 127.0.0.1:4243 -d &
+dokku-server $ sudo docker -H 0.0.0.0:4243 -d &
 ```
 
 Then create a new project, say for example heroku python sample app, and run the
 following commands.
 
 ```
-your-project $ dokuant create-user  # If you never dit it on this machine
-your-project $ dokuant create-app
+your-project $ pencil create user  # If you never dit it on this machine
+your-project $ pencil create app
 ```
 
 Hack on your project, eventually edit the Procfile to specifie how to deploy
 your app. If no Procfile is provided, it will fall back to a default one.
 
 ```
-your-project $ dokuant deploy
+your-project $ pencil deploy
 ```
 
 Your application should be deployed and accessible. You can remotely play with
-it using ```$ dokuant app "command"```. Check ```$ dokuant help``` to see what is currently
+it using ```$ pencil "command" --app <appname>```. Check ```$ pencil --help``` to see what is currently
 available.

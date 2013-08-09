@@ -20,17 +20,22 @@
 #dpkg --get-selections | grep "^python$"
 
 
+function get_project_name() {
+    pwd | awk -F"/" '{print $NF}'
+}
+
+
 function log () {
   printf "\r\033[00;36m  [ \033[00;34m..\033[00;36m ] $1\033[0m\n"
 }
 
 
-success () {
+function success () {
   printf "\r\033[00;36m  [ \033[00;32mOK\033[00;36m ] $1\033[0m\n"
 }
 
 
-fail () {
+function fail () {
   printf "\r\033[00;36m  [\033[00;31mFAIL\033[00;36m] $1\033[0m\n"
   echo ''
 }

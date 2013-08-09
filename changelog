@@ -1,4 +1,36 @@
 
+n.n.n / 2013-08-09 
+==================
+
+ * Makefile FIX, connect command improved, README FIX
+ * Connect command is now able to fireup requested images
+ * Add configuration commands
+ * Focus on dokku client, else in playground. Removed deprecated stuff, reduced dependencies, fixes
+ * Installation fixes
+ * better installation and so no more bootstrap.sh, readme instructions
+ * New installation paradigme
+ * Removed local dir (error)
+ * Fixes and vagrantfile
+ * fixes
+ * readme, one liner install, fixes and improvements
+ * new app command, docker client python lib, fixes
+ * ...
+ * Hide clone logs
+ * fixes and docker client
+ * installation script and fixes
+ * automatic server ip and fixes
+ * vagrant commands, options for scripts
+ * first implementation of openshaker
+ * Usuable binaries, boostrap and samples
+ * Automatic commit
+ * missing libraries
+ * security
+ * boostrap script, quant specific script, fixes and clean up
+ * Dokku integration
+ * intermediate backup, push functionnality
+ * Initial commit
+ * Initial commit
+
 n.n.n / 2013-08-06 
 ==================
 
