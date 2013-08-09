@@ -31,7 +31,7 @@ function get_project_name() {
 function create_dokku_user() {
     username=$1
 
-    if [ ! -f id_rsa.pub ]; then
+    if [ ! -f $HOME/.ssh/id_rsa.pub ]; then
         log "No public key found, creating a new one:"
         ssh-keygen
     fi
@@ -168,7 +168,7 @@ function ssh_container() {
 
     # Will run the required container with ssh if not ready
     #TODO Control mapped ssh_port; ['$ssh_port:22']
-    run $container_name "/usr/bin/sshd -D" "['22']"
+    run $container_name "/usr/sbin/sshd -D" "['22']"
 
     ssh_port=$(python -c "from docker_client import DockerClient; print DockerClient(host='$server_ip', port=$server_port).container('app/$container_name:latest').forwarded_ssh()")
     sleep 1

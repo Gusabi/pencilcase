@@ -13,7 +13,7 @@ SERVERDEV_PORT?=4243
 all: dependencies install
 
 install:
-	#TODO Copy in /usr/local/{bin|lib}, but what about templates ? /opt ?
+	#TODO Copy in /usr/local/{bin|lib}, /opt ?
 	@echo "[make] Creating local/* directories"
 	test -d ${HOME}/local/bin || mkdir -p ${HOME}/local/bin
 	test -d ${HOME}/local/lib || mkdir -p ${HOME}/local/lib

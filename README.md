@@ -42,7 +42,7 @@ And then simply run:
 
 ```
 $ git clone https://github.com/Gusabi/quantlab.git
-$ cd quantlab && sudo -e make all
+$ cd quantlab && sudo -E make all
 ```
 
 - Or one liner style (with more installation options):
