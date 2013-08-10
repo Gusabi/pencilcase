@@ -145,7 +145,6 @@ class Container(object):
         return self.get_port_mapping(SSH_PORT)
 
     def stop(self, timeout=None):
-        #NOTE What's the difference between kill and stop ?
         self._client.stop(self.id, timeout=timeout)
 
     def remove(self):

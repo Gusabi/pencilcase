@@ -23,11 +23,11 @@ Usage:
     pencil --version
     pencil -h | --help
     pencil create (user | app)
-    pencil deploy [--attach] [--comment=<message>]
+    pencil (start | deploy) [--attach] [--comment=<message>]
     pencil set <key> <value> [--app=<name>]
     pencil get <key> [--app=<name>]
-    pencil (connect | log | attach | start | stop | kill | remove) [--app=<app>] [--tag=<tag>]
-    pencil commit [--newname=<name>] [--newtag=<newtag>] [--app=<app>] [--tag=<tag>]
+    pencil (connect | log | attach | stop | kill | remove) [--app=<app>]
+    pencil snapshot [--name=<name>] [--tag=<tag>] [--app=<app>]
 
 Options:
     --version               Show version.
@@ -40,7 +40,9 @@ Options:
 '''
 
 
+#TODO Add help for set and get
 #TODO Git stuff from bash to here
+#TODO ssh as well, check juju sources they did it
 
 
 from docopt import docopt
@@ -64,133 +66,164 @@ def fail(message):
     puts('[' + colored.red('FAIL') + '] ' + message)
 
 
-def parse_commandline():
-    args = docopt(__doc__, version='Dokku client v0.2')
-    # We need user name for project syntax: user/project:tag
-    args['username'] = os.getlogin()
+class Pencil(DockerClient):
 
-    args['server_ip'] = os.environ['SERVERDEV_IP']
-    args['docker_port'] = os.environ['SERVERDEV_PORT']
-    args['redis_port'] = 6379
+    def __init__(self, app=None, **kwargs):
+        DockerClient.__init__(self, **kwargs)
 
-    if args['--app'] is None:
-        # If app name was not provided, assuming directory name is the app name
-        # This is much more plausible if there is a git repository
-        #assert os.path.exists('.git')
-        args['--app'] = os.path.split(os.getcwd())[-1]
+        self._username = os.getlogin()
 
-    if args['--name'] is None:
-        # Default commit value.
-        # Without args, commit command just saves current container
-        args['--name'] = args['--app']
+        # If app name was not provided, assuming it is directory name
+        self.app = os.path.split(os.getcwd())[-1] if app is None else app
+        is_tagged = self.app.find(':')
+        if is_tagged != -1:
+            # Tag was provided
+            self.tag = self.app[(is_tagged + 1):]
+            self.app = self.app[:is_tagged]
+        else:
+            # Default one
+            self.tag = 'latest'
 
-    #NOTE tag et comment should have default values
+        #TODO Something more reliable
+        self._shell = os.system
 
-    return args
+        #TODO Not always connect to redis ?
+        #NOTE db keyworld ?
+        self.redis_client = redis.StrictRedis(
+            host=kwargs.get('host', 'localhost'), port=6379, db=0)
+        try:
+            self.redis_client.echo('ping')
+            success('Connected to configuration server.')
+        except redis.ConnectionError, e:
+            fail(e.message)
 
+    def create_user(self):
+        log('Registering {} account'.format(self._username))
+        result = self.redis_client.hset(
+            self.app, 'username', self._username)
+        success('Got: {}'.format(result))
 
-#'username': os.environ['USER'],
-#'cwd': os.path.split(os.getcwd())[-1]
-if __name__ == '__main__':
-    args = parse_commandline()
+        self._shell('dokuant create-user {}'.format(self._username))
+        success('Done')
 
-    #NOTE latest hard coded but how could it be different ?
-    docker_client = DockerClient(
-        host=args['server_ip'], port=args['docker_port'])
+    def create_app(self):
+        log('Initializing dokku application...')
+        self._shell('dokuant create-app {} {}'.format(
+            self._username, self.app))
+        success('Done')
 
-    #NOTE db keyworld ?
-    redis_client = redis.StrictRedis(
-        host=args['server_ip'], port=args['redis_port'], db=0)
-    try:
-        redis_client.echo('ping')
-        success('Connected to configuration server.')
-    except redis.ConnectionError:
-        sys.exit(1)
+    def deploy(self, attach=False, comment='automatic'):
+        self._shell('dokuant deploy {} {}'.format(self.app, comment))
 
-    if args['create']:
-        if args['user']:
-            log('Registering {} account'.format(args['username']))
-            result = redis_client.hset(args['--app'],
-                                       'username',
-                                       args['username'])
-            success('Got: {}'.format(result))
-
-            os.system('dokuant create-user {}'.format(
-                args['username']))
-            success('Done')
-
-        if args['app']:
-            log('Initializing dokku application...')
-            os.system('dokuant create-app {} {}'.format(
-                args['username'], args['--app']))
-            success('Done')
-
-    elif args['deploy']:
-        os.system('dokuant deploy {} {}'.format(
-            args['--app'], args['--comment']))
-        if args['--attach']:
+        if attach:
             try:
-                container = docker_client.container(
-                    '{}/{}:latest'.format(args['username'], args['--app']))
+                container = self.container(
+                    '{}/{}:latest'.format(self._username, self.app))
                 container.attach()
             except ValueError, e:
                 fail(e.message)
 
-    elif args['get']:
-        if args['<key>'] == 'images':
-            docker_client.list_images()
-        elif args['<key>'] == 'apps':
-            docker_client.list_containers()
+    def get(self, key):
+        if key == 'images':
+            self.list_images()
+        elif key == 'apps':
+            self.list_containers()
         #NOTE Kind of a conflic with get config
-        elif args['<key>'] == 'status':
+        elif key == 'status':
             try:
-                container = docker_client.container(
-                    '{}/{}:latest'.format(args['username'], args['--app']))
+                container = self.container(
+                    '{}/{}:latest'.format(self._username, self.app))
                 container.inspect()
             except ValueError, e:
                 fail(e.message)
         else:
             log('Requesting value of {} (namespace {})'.format(
-                args['<key>'], args['--app']))
-            if args['<key>'] == 'config':
-                result = redis_client.hgetall(args['--app'])
+                key, self.app))
+            if key == 'config':
+                result = self.redis_client.hgetall(self.app)
             else:
-                result = redis_client.hget(
-                    args['--app'], args['<key>'])
+                result = self.redis_client.hget(
+                    self.app, key)
 
-            success('{} = {}'.format(args['<key>'], result))
+            success('{} = {}'.format(key, result))
 
-    elif args['set']:
+    def set(self, key, value):
         log('Setting config key "{}" to "{}" (namespace {})'.format(
-            args['<key>'], args['<value>'], args['--app']))
-        feedback = redis_client.hset(
-            args['--app'], args['<key>'], args['<value>'])
+            key, value, self.app))
+        feedback = self.redis_client.hset(self.app, key, value)
         success('Got: {}'.format(feedback))
 
-    elif args['connect']:
-        # This command will, if needed, run or restart
-        # an ssh-ready requested image
-        mapped_ssh_port = redis_client.decr('default_ssh_port')
+    def connect(self, ip):
+        # If needed, run or restart an ssh-ready requested image
+        #FIXME No decr if container already running
+        mapped_ssh_port = self.redis_client.decr('default_ssh_port')
         log('Mapping ssh port to {}'.format(mapped_ssh_port))
-        docker_client.run('{}/{}:{}'.format(args['username'], args['--app'], args['--tag']),
-                          '/usr/sbin/sshd -D',
-                          ports=['{}:22'.format(mapped_ssh_port)])
-        #NOTE Should be removed at the next test
-        #ssh_port = docker_client.container('{}/{}:{}'.format(args['username'], args['--app'], args['--tag'])).forwarded_ssh()
+
+        self.run('{}/{}:{}'.format(self._username, self.app, self.tag),
+                 '/usr/sbin/sshd -D',
+                 ports=['{}:22'.format(mapped_ssh_port)])
+
+        # Depending on what did run function, ssh port could not be the
+        # one we gave. So we fetch this information back
+        real_ssh_port = self.container('{}/{}:{}'.format(
+            self._username, self.app, self.tag)).forwarded_ssh()
         time.sleep(1)  # Wait for the container to boot I guess
 
-        #TODO Something much more reliable
-        os.system('ssh root@{} -p {}'.format(
-            args['server_ip'], mapped_ssh_port))
+        self._shell('ssh root@{} -p {}'.format(ip, real_ssh_port))
 
-    # Here we go for docker stuff
-    else:
+    def get_container(self):
         try:
-            container = docker_client.container(
-                '{}/{}:{}'.format(args['username'], args['--app'], args['--tag']))
+            container = self.container(
+                '{}/{}:{}'.format(self._username, self.app, self.tag))
         except ValueError, e:
             fail(e.message)
             sys.exit(1)
+
+        return container
+
+    def snapshot(self, newname, newtag):
+        newtag = newtag if newtag else pencil.tag
+
+        container.commit(repository='{}/{}'.format(self._username, newname),
+                         tag=newtag,
+                         author=self._username)
+        success('Application committed to {}/{}:{}'.format(
+            self._username, newname, newtag))
+
+if __name__ == '__main__':
+    args = docopt(__doc__, version='Dokku client, pencil v0.3')
+
+    try:
+        server_ip = os.environ['SERVERDEV_IP']
+        docker_port = os.environ['SERVERDEV_PORT']
+    except KeyError, e:
+        fail(e.message)
+        sys.exit(1)
+
+    pencil = Pencil(app=args['--app'], host=server_ip, port=docker_port)
+
+    if args['create']:
+        if args['user']:
+            pencil.create_user()
+
+        if args['app']:
+            pencil.create_app()
+
+    elif args['deploy']:
+        pencil.deploy()
+
+    elif args['get']:
+        pencil.get(args['<key>'])
+
+    elif args['set']:
+        pencil.set(args['<key>'], args['<value>'])
+
+    elif args['connect']:
+        pencil.connect(server_ip)
+
+    # Here we go for docker stuff
+    else:
+        container = pencil.get_container()
         #TODO execute
         #TODO push
         #TODO restart, does not work for now
@@ -216,12 +249,5 @@ if __name__ == '__main__':
         elif args['log']:
             container.logs(display=True)
 
-        elif args['commit']:
-            if args['--newtag'] is None:
-                args['--newtag'] = args['--tag']
-
-            container.commit(repository='{}/{}'.format(args['username'], args['--newname']),
-                             tag=args['--newtag'],
-                             author=args['username'])
-            success('Application committed to {}/{}:{}'.format(
-                args['username'], args['--newname'], args['--newtag']))
+        elif args['snapshot']:
+            pencil.snapshot(args['--name'], args['--tag'])
