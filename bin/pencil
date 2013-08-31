@@ -23,9 +23,10 @@ Usage:
     pencil --version
     pencil -h | --help
     pencil create (user | app)
-    pencil (start | deploy) [--attach] [--comment=<message>]
+    pencil deploy [--attach] [--comment=<message>]
     pencil set <key> <value> [--app=<name>]
-    pencil get <key> [--app=<name>]
+    pencil get <key> [--all] [--app=<name>]
+    pencil start [--attach] [--app=<name>]
     pencil (connect | log | attach | stop | kill | remove) [--app=<app>]
     pencil snapshot [--name=<name>] [--tag=<tag>] [--app=<app>]
 
@@ -34,6 +35,7 @@ Options:
     -h --help               Show this screen.
     --app <app>             Run the command against the app named <app>.
     --attach                After deployement, will cath app logs.
+    --all                   Fetch complete set of informations for apps and config parameters.
     --name <name>           Provide image name for commit.
     --tag <tag>             Provide tag for commit [default: latest].
     --comment <comment>     Git commit message [default: Automatic-commit].
@@ -45,8 +47,9 @@ import sys
 
 from control import main
 
-args = docopt(__doc__, version='Dokku client, pencil v0.3')
+args = docopt(__doc__, version='Dokku client, pencil v0.1.2')
 
+#TODO pencil copy directory_or_file [--app=<app>]
 #NOTE For dev mode I wan to see what went wrong
 #try:
 main(args)

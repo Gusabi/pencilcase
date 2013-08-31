@@ -264,6 +264,7 @@ class DockerClient(object):
                 self._client.containers(all=True),
                 key=lambda box: box['Created'])[-1]['Id']
             puts(colored.blue('[ .. ] Starting container with {}'.format(cmd)))
+            puts(colored.blue('[ .. ] Mapping port(s) {}'.format(kwargs.get('ports'))))
             self._client.start(winner_id)
 
         if winner_id:

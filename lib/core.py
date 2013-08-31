@@ -22,7 +22,7 @@
 #TODO ssh as well, check juju sources they did it
 
 
-from docker_client import DockerClient
+#from docker_client import DockerClient
 import utils
 
 import os
@@ -34,7 +34,7 @@ import time
 class Pencil(DockerClient):
 
     def __init__(self, app=None, **kwargs):
-        DockerClient.__init__(self, **kwargs)
+        #DockerClient.__init__(self, **kwargs)
 
         self._username = os.getlogin()
 
@@ -88,24 +88,23 @@ class Pencil(DockerClient):
             except ValueError, e:
                 utils.fail(e.message)
 
-    def get(self, key):
+    def get(self, key, all=False):
         if key == 'images':
             self.list_images()
         elif key == 'apps':
-            self.list_containers()
-        #NOTE Kind of a conflic with get config
-        elif key == 'status':
-            try:
-                container = self.container(
-                    '{}/{}:latest'.format(self._username, self.app))
-                container.inspect()
-            except ValueError, e:
-                utils.fail(e.message)
+            self.list_containers(all=all)
         else:
             utils.log('Requesting value of {} (namespace {})'.format(
                 key, self.app))
             if key == 'config':
                 result = self.redis_client.hgetall(self.app)
+                if all:
+                    try:
+                        container = self.container(
+                            '{}/{}:latest'.format(self._username, self.app))
+                        container.inspect()
+                    except ValueError, e:
+                        utils.fail(e.message)
             else:
                 result = self.redis_client.hget(
                     self.app, key)
@@ -122,7 +121,7 @@ class Pencil(DockerClient):
         # If needed, run or restart an ssh-ready requested image
         #FIXME No decr if container already running
         mapped_ssh_port = self.redis_client.decr('default_ssh_port')
-        utils.log('Mapping ssh port to {}'.format(mapped_ssh_port))
+        utils.log('Got ssh port from config manager: {}'.format(mapped_ssh_port))
 
         self.run('{}/{}:{}'.format(self._username, self.app, self.tag),
                  '/usr/sbin/sshd -D',
@@ -134,6 +133,7 @@ class Pencil(DockerClient):
             self._username, self.app, self.tag)).forwarded_ssh()
         time.sleep(1)  # Wait for the container to boot I guess
 
+        utils.log('Connecting to your environment ({})'.format(real_ssh_port))
         self._shell('ssh root@{} -p {}'.format(ip, real_ssh_port))
 
     def get_container(self):

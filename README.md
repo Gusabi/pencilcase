@@ -109,3 +109,23 @@ your-project $ pencil deploy
 Your application should be deployed and accessible. You can remotely play with
 it using ```$ pencil "command" --app <appname>```. Check ```$ pencil --help``` to see what is currently
 available.
+
+Some Details
+------------
+
+* ```--app``` parameter allows you to provide the container/image tag by following this pattern (docker compliant): ```--app name:tag```. Otherwise it will assume tag is "latest".
+
+* ```get``` command has some built-in keywords:
+
+    * ```pencil get images``` returns base images currently stored on the
+      server. You can use any of them to build your application (use ```pencil
+      set image image/name``` before deployement), or connect to those 
+      built with ssh support (such images from my buildstep fork, for example !)
+
+    * ```pencil get apps``` returns currently running apps (i.e. containers),
+      and stopped as well if ```--all``` parameter was provided.
+
+    * ```pencil get config``` returns application parameters, such as image
+      used. If ```-all``` was provided, will return also container
+      informations.
+

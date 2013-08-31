@@ -49,12 +49,13 @@ def main(args):
         pencil.deploy()
 
     elif args['get']:
-        pencil.get(args['<key>'])
+        pencil.get(args['<key>'], all=args['--all'])
 
     elif args['set']:
         pencil.set(args['<key>'], args['<value>'])
 
     elif args['connect']:
+        #FIXME If requested image does not exist on the server, fails
         pencil.connect(server_ip)
 
     # Here we go for docker stuff

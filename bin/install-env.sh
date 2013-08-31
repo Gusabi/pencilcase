@@ -59,7 +59,7 @@ log "Plugins: $PLUGINS"
 
 log "Cloning dotfile repository..."
 # --recursive ships vim plugins and gitignore with the rest
-git clone --recursive https://github.com/Gusabi/Dotfiles.git $HOME/.dotfiles
+git clone --depth=1 --recursive https://github.com/Gusabi/Dotfiles.git $HOME/.dotfiles
 
 success "Done, bootstraping environment..."
 $HOME/.dotfiles/bootstrap.sh -u $GUSER -m $GMAIL -n $NODE -s $shell -p $PLUGINS
