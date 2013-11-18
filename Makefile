@@ -42,3 +42,10 @@ dependencies:
 	@echo "[make] Pip installing python modules"
 	pip install --upgrade distribute 2>&1 >> ${LOGS}
 	pip install --upgrade -r requirements.txt 2>&1 >> ${LOGS}
+
+check-client:
+	pgrep --count hivy > /dev/null || hivy -n master -d node --verbose &
+	#TODO Ignore dependencies
+	nosetests --verbose --with-progressive --with-coverage --cover-erase --cover-package=hivy-client hivy-client
+	coverage report
+	killall hivy

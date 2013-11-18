@@ -77,3 +77,4 @@ plugins.json
 .env
 
 .gitconfig
+.coverage
